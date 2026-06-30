@@ -1,0 +1,16 @@
+{
+  "name": "darshub",
+  "private": true,
+  "version": "1.0.0",
+  "description": "O'quv markazi boshqaruv tizimi",
+  "scripts": {
+    "dev:front": "cd front && npm run dev",
+    "dev:back": "cd backend && npm run dev",
+    "build:front": "cd front && npm run build",
+    "build:back": "cd backend && npm run build",
+    "preview": "cd front && npm run preview"
+  },
+  "dependencies": {
+    "vue-toastify": "^2.1.0"
+  }
+}
