@@ -1,7 +1,6 @@
 import { defineStore } from "pinia";
 import { dataType } from "../@types";
-import axios from "axios";
-import BASE_URL from "../config";
+import http from "../utils/http";
 import Cookies from "js-cookie";
 import router from "../routes";
 import { toast } from "vue3-toastify";
@@ -18,7 +17,7 @@ const useLoginStore = defineStore("login",{
            async loginRequest(data:dataType){
              this.isLoading = true
                 try{
-                    const response = await axios.post(`${BASE_URL}/api/auth/login`,data)
+                    const response = await http.post('/api/auth/login',data)
                     this.isLoading = false
                     if(response.data.success == false){
                         toast.error(response.data.message)

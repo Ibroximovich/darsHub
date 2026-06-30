@@ -1,6 +1,5 @@
-import axios from "axios";
 import { defineStore } from "pinia";
-import BASE_URL from "../config";
+import http from "../utils/http";
 import { toast } from "vue3-toastify";
 import router from "../routes";
 
@@ -15,7 +14,7 @@ const useOtpCodeStore = defineStore("otpCode",{
         this.code = data.code
         
         try{
-            const responsive = await axios.post(`${BASE_URL}/api/auth/verify-code`,data)
+            const responsive = await http.post('/api/auth/verify-code',data)
             if(responsive.data.success == true){
                 toast.success(responsive.data.message)
                 router.push("/reset-password")

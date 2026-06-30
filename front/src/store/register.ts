@@ -1,7 +1,6 @@
 import { defineStore } from "pinia";
 import { dataType } from "../@types";
-import axios from "axios";
-import BASE_URL from "../config";
+import http from "../utils/http";
 
 import Cookies from 'js-cookie';
 import { toast } from "vue3-toastify";
@@ -18,7 +17,7 @@ const useRegisterStore = defineStore('register', {
         async registerRequest(data: dataType) {
             this.isLoading = true
             try {
-                const res = await axios.post(`${BASE_URL}/api/auth/register`, data);
+                const res = await http.post('/api/auth/register', data);
                 this.isLoading = false
 
                 if (res.data.success == false) {

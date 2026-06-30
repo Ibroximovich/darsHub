@@ -1,9 +1,9 @@
 import { Response } from 'express';
 import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
 import pool from '../db/index.js';
 import { AuthRequest } from '../middleware/auth.middleware.js';
 import { sendResetCodeEmail } from '../utils/email.js';
+import { generateToken } from '../utils/jwt.js';
 
 // Email validation regex
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -59,11 +59,7 @@ export const register = async (req: AuthRequest, res: Response) => {
     const user = result.rows[0];
 
     // 7. JWT token generatsiya qilish
-    const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET || 'your_secret',
-      { expiresIn: '7d' }
-    );
+    const token = generateToken(user);
 
     // 8. Token va user ma'lumotlarini qaytarish
     res.status(201).json({
@@ -119,11 +115,7 @@ export const login = async (req: AuthRequest, res: Response) => {
     }
 
     // Create token
-    const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role },
-      process.env.JWT_SECRET || 'your_secret',
-      { expiresIn: '7d' }
-    );
+    const token = generateToken(user);
 
     res.json({
       success: true,

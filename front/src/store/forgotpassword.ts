@@ -1,6 +1,5 @@
-import axios from "axios";
 import { defineStore } from "pinia";
-import BASE_URL from "../config";
+import http from "../utils/http";
 import { toast } from "vue3-toastify";
 import router from "../routes";
 
@@ -17,7 +16,7 @@ const useForgotPasswordStore = defineStore('forgotPassword',{
         this.email = email
         this.isloading = true
         try{
-         const response = await axios.post(`${BASE_URL}/api/auth/forgot-password`,{email})
+         const response = await http.post('/api/auth/forgot-password',{email})
          console.log(response.data);
          this.isloading = false
          if(response.data.success){
