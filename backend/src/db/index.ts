@@ -1,5 +1,5 @@
-import { Pool } from 'pg';
-import dotenv from 'dotenv';
+import { Pool } from "pg";
+import dotenv from "dotenv";
 
 dotenv.config();
 
@@ -29,13 +29,14 @@ export async function initializeDatabase() {
         created_at TIMESTAMP DEFAULT NOW()
       );
 
-      CREATE TABLE IF NOT EXISTS groups (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        teacher_id INTEGER REFERENCES users(id),
-        description TEXT,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-      );
+    CREATE TABLE IF NOT EXISTS groups (
+          id SERIAL PRIMARY KEY,
+          name VARCHAR(255) NOT NULL,
+          subject VARCHAR(255),
+          schedule TEXT,
+          teacher_id INTEGER REFERENCES users(id),
+          created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        );
 
       CREATE TABLE IF NOT EXISTS students (
         id SERIAL PRIMARY KEY,
@@ -115,9 +116,9 @@ export async function initializeDatabase() {
       CREATE INDEX IF NOT EXISTS idx_password_resets_user_id ON password_resets(user_id);
       CREATE INDEX IF NOT EXISTS idx_payments_student_id ON payments(student_id);
     `);
-    console.log('Database tables initialized successfully');
+    console.log("Database tables initialized successfully");
   } catch (error) {
-    console.error('Error initializing database:', error);
+    console.error("Error initializing database:", error);
     throw error;
   }
 }

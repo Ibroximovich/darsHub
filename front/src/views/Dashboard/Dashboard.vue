@@ -25,6 +25,7 @@ const raw = localStorage.getItem('data');
 const data: dataType | null = raw ? JSON.parse(raw) : null;
 
 const showLogoutModal = ref(false)
+ const  isGroupModal  = ref(false)
 
 
 
@@ -180,8 +181,12 @@ function handleLogout(){
             </div>
             <p class="text-base font-semibold text-gray-800">Hozircha darslar yo'q</p>
             <p class="text-sm text-gray-400 mt-1">Guruh ochib dars qo'shing</p>
-            <button class="mt-5 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm shadow-blue-500/10">
+            <button @click="isGroupModal = true" class=" cursor-pointer  mt-5 px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition-colors shadow-sm shadow-blue-500/10">
               Guruh qo'shish
+              <CustomModal 
+              :isGroupModal = "isGroupModal",
+              @closeGroupModal ="isGroupModal = false"
+              />
             </button>
           </div>
         </div>

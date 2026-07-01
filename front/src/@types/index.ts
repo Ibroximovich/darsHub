@@ -3,3 +3,10 @@ export interface dataType {
     email: string;
     password: string;
 }
+
+export interface groupType {
+     name:string
+    subject:string
+    schedule:string
+
+}
