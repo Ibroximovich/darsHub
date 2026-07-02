@@ -1,19 +1,27 @@
 import { defineStore } from "pinia";
-import { groupType } from "../@types";
+import { addGroupType} from "../@types";
 import http from "../utils/http";
+import { toast } from "vue3-toastify";
 
 
 const useAddGroupStore = defineStore("addGroup",{
 
+    state:() => ({
+        isLoading:false
+    }),
+
     actions:{
-      async  addGroupFn (group:groupType){
+      async  addGroupFn (group:addGroupType){
+        this.isLoading = true
         try{
-            const response = await http.post("/api/groups",group)
-            console.log(response.data);
-            
+             await http.post("/api/groups",group)
+            this.isLoading = false
+           toast.success("Muvaffaqqiyatli qo'shildi")
+           return true
         }catch(err){
-            console.log(err);
-            
+            console.log(err); 
+            toast.error("Ma'lumot qo'shilmadi ")
+            return false
         }
 
 

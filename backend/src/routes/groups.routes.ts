@@ -85,6 +85,43 @@ router.get('/:id', authMiddleware, getGroupById);
 /**
  * @swagger
  * /api/groups/{id}:
+ *   patch:
+ *     summary: Guruh ma'lumotlarini qisman yangilash
+ *     tags: [Groups]
+ *     security:
+ *       - BearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               subject:
+ *                 type: string
+ *               schedule:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Guruh yangilandi
+ *       404:
+ *         description: Guruh topilmadi
+ *       401:
+ *         description: Token yo'q yoki yaroqsiz
+ */
+router.patch('/:id', authMiddleware, updateGroup);
+
+/**
+ * @swagger
+ * /api/groups/{id}:
  *   put:
  *     summary: Guruh ma'lumotlarini yangilash
  *     tags: [Groups]

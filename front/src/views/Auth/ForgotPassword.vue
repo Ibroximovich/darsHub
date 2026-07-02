@@ -38,7 +38,6 @@ function handleSubmit() {
                         <input required v-model="email" type="email" placeholder="email@example.com"
                             class="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition" />
                     </div>
-
                     <p v-if="error" class="text-red-500 text-xs mb-3">{{ error }}</p>
 
                     <button

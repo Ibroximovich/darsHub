@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory, type RouteRecordRaw } from "vue-router"
-import { DashboardPages, ForgotPasswordPages, LoginPages, OtpCodePages, RegisterPages, ResetPasswordPages } from "../views"
+import { DashboardPages, ForgotPasswordPages, GroupsPages, HomePages, LoginPages, OtpCodePages, PaymentsPages, RegisterPages, ResetPasswordPages, StudentsPages } from "../views"
 import Cookies from "js-cookie"
 
 
@@ -10,7 +10,15 @@ const routes:RouteRecordRaw[] = [
     {path:"/forgot-password",component:ForgotPasswordPages},
     {path:"/otp-code",component:OtpCodePages},
     {path:"/reset-password",component:ResetPasswordPages},
-    {path:"/dashboard",component:DashboardPages,meta:{auth:true}}
+    {
+        path:"/dashboard",component:DashboardPages,meta:{auth:true},
+        children:[
+            {path:"",component:HomePages},
+            {path:"groups",component:GroupsPages},
+            {path:"students",component:StudentsPages},
+            {path:"payments",component:PaymentsPages},
+        ]
+}
 ]
 
 

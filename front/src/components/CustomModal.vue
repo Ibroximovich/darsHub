@@ -8,12 +8,18 @@ defineOptions({
 
 defineProps<{
   isGroupModal?: boolean,
+  isDeleteModal?: boolean
   isOpen?: boolean
 }>()
+
+
 
 const emit = defineEmits<{
   (e: 'confirm'): void
   (e: 'cancel'): void
+  (e: 'refresh'): void
+  (e: 'deleteGroup'): void
+
   (e: 'closeGroupModal'): void
 }>()
 
@@ -23,22 +29,32 @@ const name = ref<string>('')
 const subject = ref<string>('')
 const schedule = ref<string>('')
 
-function handleSubmit(){
+// add group
+async function handleSubmit() {
   const group = {
-    name:name.value,
-    subject:subject.value,
-    schedule:schedule.value
+    name: name.value,
+    subject: subject.value,
+    schedule: schedule.value
   }
-  useAddGroup.addGroupFn(group)
-  console.log(group);
-  
+
+  const success = await useAddGroup.addGroupFn(group)
+  if (success) {
+    emit('refresh')
+    emit("closeGroupModal")
+  }
+
+  name.value = ''
+  subject.value = ''
+  schedule.value = ''
+
+
 
 }
-
 </script>
 
 <template>
   <Teleport to="body">
+    <!-- logout profil  -->
     <Transition name="fade">
       <div v-if="isOpen" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-4"
         @click.self="emit('cancel')">
@@ -72,11 +88,12 @@ function handleSubmit(){
         </div>
       </div>
     </Transition>
-
+    <!-- add group pages  -->
     <Transition name="fade">
       <div v-if="isGroupModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-4"
         @click.self="emit('closeGroupModal')">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+
 
           <!-- Header -->
           <div class="flex items-center justify-between mb-6">
@@ -115,15 +132,34 @@ function handleSubmit(){
                 class="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition">
                 Bekor qilish
               </button>
-              <button type="submit"
-                class="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 transition">
-                Qo'shish
+              <button type="submit" :class="useAddGroup.isLoading ? 'bg-blue-200' : 'bg-blue-600 hover:bg-blue-700'"
+                class="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-white transition">
+                {{ useAddGroup.isLoading ? "Qo'shilmoqda..." : "Qo'shish" }}
               </button>
             </div>
           </form>
+        </div>
+      </div>
+    </Transition>
+    <!-- delete group  -->
+    <Transition name="fade">
+      <div v-if="isDeleteModal" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-4"
+        @click.self="emit('cancel')">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
+          <h3 class="text-lg font-bold text-gray-950 text-center">
+           Guruhni o'chirmoqchimisz?
+          </h3>
 
-         
-
+          <div class="flex gap-3 mt-6">
+            <button @click="emit('cancel')"
+              class="  cursor-pointer flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition-colors">
+              Bekor qilish 
+            </button>
+            <button @click="emit('deleteGroup')"
+              class="  cursor-pointer flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-white bg-red-600 hover:bg-red-700 transition-colors">
+              O'chirish
+            </button>
+          </div>
         </div>
       </div>
     </Transition>
