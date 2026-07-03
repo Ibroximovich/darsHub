@@ -5,17 +5,17 @@ import http from '../../utils/http';
 import { toast } from 'vue3-toastify';
 import { CustomModal } from '../../components';
 
-
 const groups = ref<allGroupType[]>([])
 
 const isGroupModal = ref<boolean>(false)
 const isDeleteModal = ref<boolean>(false)
+const selectedGroup = ref<allGroupType | null>(null)
+const groupToDeleteId = ref<number | null>(null)
 
 async function fetchGroups() {
   try {
     const response = await http.get('/api/groups')
     groups.value = response.data.data
-    
   } catch (err) {
     console.error("Guruhlarni yuklashda xatolik:", err)
   }
@@ -25,55 +25,74 @@ onMounted(() => {
   fetchGroups()
 })
 
-
-
- async function handleDeleteGroup(id:number){
-    try{
-         await http.delete(`/api/groups/${id}`)
-         groups.value = groups.value.filter(group => group.id !== id)
-         toast.success("Muvaffaqqiyatli o'chirildi")
-         isDeleteModal.value = false
-    }catch(err){
-
-        toast.error("O'chirishda xatolik")
-
-        console.log(err);
-        
-    }
-
-
-       
+function openAddModal() {
+  selectedGroup.value = null
+  isGroupModal.value = true
 }
 
-function handleEditGroup(id:number){
-  alert(id)
+function closeGroupModal() {
+  isGroupModal.value = false
+  selectedGroup.value = null
+}
 
+function handleEditGroup(group: allGroupType) {
+  selectedGroup.value = group
+  isGroupModal.value = true
+}
 
+function openDeleteModal(id: number) {
+  groupToDeleteId.value = id
+  isDeleteModal.value = true
+}
 
+function closeDeleteModal() {
+  isDeleteModal.value = false
+  groupToDeleteId.value = null
+}
+
+async function handleDeleteGroup() {
+  if (!groupToDeleteId.value) return
+
+  try {
+    await http.delete(`/api/groups/${groupToDeleteId.value}`)
+    groups.value = groups.value.filter(group => group.id !== groupToDeleteId.value)
+    toast.success("Muvaffaqiyatli o'chirildi")
+    closeDeleteModal()
+  } catch (err) {
+    toast.error("O'chirishda xatolik")
+    console.log(err)
+  }
 }
 </script>
 
 <template>
-  <div  >
+  <div>
     <!-- Header -->
     <div class="flex items-center justify-between mb-6">
       <div>
         <h1 class="text-2xl font-extrabold text-gray-950">Guruhlar</h1>
         <p class="text-sm text-gray-500 mt-0.5">Barcha guruhlaringiz</p>
       </div>
-      <button @click="isGroupModal = true" class="cursor-pointer flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition">
+      <button @click="openAddModal" class="cursor-pointer flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-xl transition">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
         </svg>
         Guruh qo'shish
       </button>
-      <CustomModal 
-      :isGroupModal="isGroupModal" 
-      @closeGroupModal="isGroupModal = false"
+    </div>
+
+    <CustomModal
+      :isGroupModal="isGroupModal"
+      :group="selectedGroup"
+      @closeGroupModal="closeGroupModal"
       @refresh="fetchGroups"
     />
-    
-    </div>
+
+    <CustomModal
+      :isDeleteModal="isDeleteModal"
+      @deleteGroup="handleDeleteGroup"
+      @cancel="closeDeleteModal"
+    />
 
     <!-- Empty state -->
     <div v-if="groups.length === 0" class="bg-white border border-gray-100 rounded-3xl p-14 flex flex-col items-center text-center shadow-sm">
@@ -121,29 +140,22 @@ function handleEditGroup(id:number){
 
         <!-- Buttons -->
         <div class="flex gap-2">
-          <button @click="handleEditGroup(group.id)" class="cursor-pointer flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 transition">
+          <button @click="handleEditGroup(group)" class="cursor-pointer flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                 d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
             Tahrirlash
           </button>
-          <button  @click="isDeleteModal = true" class="cursor-pointer flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 transition">
+          <button @click="openDeleteModal(group.id)" class="cursor-pointer flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                 d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
-            <CustomModal 
-            :isDeleteModal ="isDeleteModal"
-            @deleteGroup="handleDeleteGroup(group.id)"
-            @cancel="isDeleteModal = false"
-            />
             O'chirish
           </button>
         </div>
-
       </div>
     </div>
-
   </div>
 </template>

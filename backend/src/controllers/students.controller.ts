@@ -38,10 +38,26 @@ export const getStudents = async (req: AuthRequest, res: Response) => {
     }
 
     const result = await pool.query(
-      `SELECT id, full_name, phone, parent_name, parent_phone, teacher_id, created_at
-       FROM students
-       WHERE teacher_id = $1
-       ORDER BY created_at DESC`,
+      `SELECT
+         s.id,
+         s.full_name,
+         s.phone,
+         s.parent_name,
+         s.parent_phone,
+         s.teacher_id,
+         s.created_at,
+         COALESCE(
+           json_agg(
+             json_build_object('id', g.id, 'name', g.name, 'subject', g.subject)
+           ) FILTER (WHERE g.id IS NOT NULL),
+           '[]'
+         ) AS groups
+       FROM students s
+       LEFT JOIN group_students gs ON gs.student_id = s.id
+       LEFT JOIN groups g ON g.id = gs.group_id AND g.teacher_id = s.teacher_id
+       WHERE s.teacher_id = $1
+       GROUP BY s.id
+       ORDER BY s.created_at DESC`,
       [teacherId]
     );
 

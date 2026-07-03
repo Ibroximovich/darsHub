@@ -1,25 +1,25 @@
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, computed, watch } from 'vue';
 import { useAddGroupStore } from '../store';
+import { allGroupType } from '../@types';
 
 defineOptions({
   inheritAttrs: false
 })
 
-defineProps<{
+const props = defineProps<{
   isGroupModal?: boolean,
   isDeleteModal?: boolean
   isOpen?: boolean
+  group?: allGroupType | null
+  deleteTitle?: string
 }>()
-
-
 
 const emit = defineEmits<{
   (e: 'confirm'): void
   (e: 'cancel'): void
   (e: 'refresh'): void
   (e: 'deleteGroup'): void
-
   (e: 'closeGroupModal'): void
 }>()
 
@@ -29,26 +29,47 @@ const name = ref<string>('')
 const subject = ref<string>('')
 const schedule = ref<string>('')
 
-// add group
+const isEditMode = computed(() => !!props.group?.id)
+
+function resetForm() {
+  name.value = ''
+  subject.value = ''
+  schedule.value = ''
+}
+
+function fillForm(group: allGroupType) {
+  name.value = group.name
+  subject.value = group.subject
+  schedule.value = group.schedule
+}
+
+watch(
+  () => [props.isGroupModal, props.group] as const,
+  ([open, group]) => {
+    if (open && group) {
+      fillForm(group)
+    } else if (!open) {
+      resetForm()
+    }
+  }
+)
+
 async function handleSubmit() {
-  const group = {
+  const groupData = {
     name: name.value,
     subject: subject.value,
     schedule: schedule.value
   }
 
-  const success = await useAddGroup.addGroupFn(group)
+  const success = isEditMode.value && props.group
+    ? await useAddGroup.updateGroupFn(props.group.id, groupData)
+    : await useAddGroup.addGroupFn(groupData)
+
   if (success) {
     emit('refresh')
-    emit("closeGroupModal")
+    emit('closeGroupModal')
+    resetForm()
   }
-
-  name.value = ''
-  subject.value = ''
-  schedule.value = ''
-
-
-
 }
 </script>
 
@@ -97,8 +118,10 @@ async function handleSubmit() {
 
           <!-- Header -->
           <div class="flex items-center justify-between mb-6">
-            <h3 class="text-base font-semibold text-gray-900">Yangi guruh qo'shish</h3>
-            <button @click="emit('closeGroupModal')"
+            <h3 class="text-base font-semibold text-gray-900">
+              {{ isEditMode ? "Guruhni tahrirlash" : "Yangi guruh qo'shish" }}
+            </h3>
+            <button type="button" @click="emit('closeGroupModal')"
               class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-gray-100 transition">
               <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -128,13 +151,18 @@ async function handleSubmit() {
             </div>
 
             <div class="flex gap-3 mt-6">
-              <button @click="emit('closeGroupModal')"
+              <button type="button" @click="emit('closeGroupModal')"
                 class="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 transition">
                 Bekor qilish
               </button>
-              <button type="submit" :class="useAddGroup.isLoading ? 'bg-blue-200' : 'bg-blue-600 hover:bg-blue-700'"
+              <button type="submit" :disabled="useAddGroup.isLoading"
+                :class="useAddGroup.isLoading ? 'bg-blue-200' : 'bg-blue-600 hover:bg-blue-700'"
                 class="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-white transition">
-                {{ useAddGroup.isLoading ? "Qo'shilmoqda..." : "Qo'shish" }}
+                {{
+                  useAddGroup.isLoading
+                    ? (isEditMode ? "Saqlanmoqda..." : "Qo'shilmoqda...")
+                    : (isEditMode ? "Saqlash" : "Qo'shish")
+                }}
               </button>
             </div>
           </form>
@@ -147,7 +175,7 @@ async function handleSubmit() {
         @click.self="emit('cancel')">
         <div class="bg-white rounded-2xl shadow-xl w-full max-w-sm p-6">
           <h3 class="text-lg font-bold text-gray-950 text-center">
-           Guruhni o'chirmoqchimisz?
+           {{ deleteTitle ?? "Guruhni o'chirmoqchimisz?" }}
           </h3>
 
           <div class="flex gap-3 mt-6">
