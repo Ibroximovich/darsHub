@@ -98,6 +98,20 @@ export const resetPasswordSchema = z.object({
     .min(6, 'Yangi parol kamida 6 ta belgidan iborat bo\'lishi kerak'),
 });
 
+/**
+ * Update Profile — profil ma'lumotlarini tahrirlash schema'si
+ */
+export const updateProfileSchema = z.object({
+  fullName: z
+    .string({ error: 'Ism majburiy' })
+    .min(2, 'Ism kamida 2 ta belgidan iborat bo\'lishi kerak')
+    .trim(),
+
+  phone: z
+    .string()
+    .optional(),
+});
+
 // Type inference uchun export
 export type RegisterInput = z.infer<typeof registerSchema>;
 export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
@@ -105,3 +119,4 @@ export type ResendCodeInput = z.infer<typeof resendCodeSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;

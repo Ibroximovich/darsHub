@@ -5,6 +5,9 @@ import cookieParser from 'cookie-parser';
 import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
 import authRoutes from './routes/auth.routes';
+import groupsRoutes from './routes/groups.routes';
+import studentsRoutes from './routes/students.routes';
+import attendanceRoutes from './routes/attendance.routes';
 import { errorHandler } from './middleware/error-handler';
 
 const app = express();
@@ -57,6 +60,15 @@ app.get('/api/health', (_req, res) => {
 
 // Auth routes
 app.use('/api/auth', authRoutes);
+
+// Groups routes
+app.use('/api/groups', groupsRoutes);
+
+// Students routes
+app.use('/api/students', studentsRoutes);
+
+// Attendance & Lessons routes
+app.use('/api', attendanceRoutes);
 
 // ─── Markazlashtirilgan xatolarni qayta ishlash ─────────────────────────────
 

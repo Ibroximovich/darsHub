@@ -17,6 +17,12 @@ const options: swaggerJsdoc.Options = {
         description: 'Local Development Server',
       },
     ],
+    tags: [
+      { name: 'Health', description: 'Server holatini tekshirish' },
+      { name: 'Auth', description: 'Autentifikatsiya va hisob boshqaruvi' },
+      { name: 'Groups', description: 'Guruhlar boshqaruvi' },
+      { name: 'Students', description: 'O\'quvchilar va guruh a\'zoligi boshqaruvi' },
+    ],
     components: {
       securitySchemes: {
         bearerAuth: {
@@ -66,6 +72,102 @@ const options: swaggerJsdoc.Options = {
             email: { type: 'string', format: 'email', example: 'ali@example.com' },
             code: { type: 'string', example: '123456' },
             newPassword: { type: 'string', format: 'password', example: 'yangiParol123' },
+          },
+        },
+        CreateGroupRequest: {
+          type: 'object',
+          required: ['name', 'days', 'time', 'price', 'paymentType'],
+          properties: {
+            name: { type: 'string', example: 'Frontend React N1' },
+            days: {
+              type: 'array',
+              items: { type: 'string' },
+              example: ['monday', 'wednesday', 'friday'],
+            },
+            time: { type: 'string', example: '15:00' },
+            price: { type: 'integer', example: 500000 },
+            paymentType: {
+              type: 'string',
+              enum: ['monthly', 'lesson_based'],
+              example: 'monthly',
+            },
+            lessonsPerCycle: {
+              type: 'integer',
+              nullable: true,
+              example: 12,
+              description: 'Faqat paymentType "lesson_based" bo\'lganda majburiy',
+            },
+          },
+        },
+        UpdateGroupRequest: {
+          type: 'object',
+          properties: {
+            name: { type: 'string', example: 'Frontend React N1 (Yangi)' },
+            days: {
+              type: 'array',
+              items: { type: 'string' },
+              example: ['tuesday', 'thursday', 'saturday'],
+            },
+            time: { type: 'string', example: '16:30' },
+            price: { type: 'integer', example: 600000 },
+            paymentType: {
+              type: 'string',
+              enum: ['monthly', 'lesson_based'],
+              example: 'lesson_based',
+            },
+            lessonsPerCycle: { type: 'integer', nullable: true, example: 12 },
+          },
+        },
+        GroupResponse: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: 'd3b07384-d113-46e4-a587-123456789abc' },
+            userId: { type: 'string', example: 'u1b07384-d113-46e4-a587-123456789abc' },
+            name: { type: 'string', example: 'Frontend React N1' },
+            days: { type: 'array', items: { type: 'string' }, example: ['monday', 'wednesday', 'friday'] },
+            time: { type: 'string', example: '15:00' },
+            price: { type: 'integer', example: 500000 },
+            paymentType: { type: 'string', example: 'monthly' },
+            lessonsPerCycle: { type: 'integer', nullable: true, example: null },
+            studentsCount: { type: 'integer', example: 0 },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        AddStudentRequest: {
+          type: 'object',
+          description: 'Yangi o\'quvchi yoki mavjud o\'quvchini biriktirish',
+          properties: {
+            studentId: { type: 'string', example: 's1b07384-d113-46e4-a587-123456789abc', description: 'Mavjud o\'quvchini biriktirishda ishlatiladi' },
+            firstName: { type: 'string', example: 'Jasur' },
+            lastName: { type: 'string', example: 'Karimov' },
+            phone: { type: 'string', example: '+998901234567' },
+            parentName: { type: 'string', nullable: true, example: 'Otabek Karimov' },
+            parentPhone: { type: 'string', example: '+998909876543' },
+          },
+        },
+        UpdateStudentRequest: {
+          type: 'object',
+          properties: {
+            firstName: { type: 'string', example: 'Jasur' },
+            lastName: { type: 'string', example: 'Karimov' },
+            phone: { type: 'string', example: '+998901234567' },
+            parentName: { type: 'string', nullable: true, example: 'Otabek Karimov' },
+            parentPhone: { type: 'string', example: '+998909876543' },
+          },
+        },
+        StudentResponse: {
+          type: 'object',
+          properties: {
+            id: { type: 'string', example: 's1b07384-d113-46e4-a587-123456789abc' },
+            userId: { type: 'string', example: 'u1b07384-d113-46e4-a587-123456789abc' },
+            firstName: { type: 'string', example: 'Jasur' },
+            lastName: { type: 'string', example: 'Karimov' },
+            phone: { type: 'string', example: '+998901234567' },
+            parentName: { type: 'string', nullable: true, example: 'Otabek Karimov' },
+            parentPhone: { type: 'string', example: '+998909876543' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
           },
         },
         ErrorResponse: {
@@ -221,6 +323,249 @@ const options: swaggerJsdoc.Options = {
           security: [{ bearerAuth: [] }],
           responses: {
             200: { description: "Foydalanuvchi ma'lumotlari qaytarildi" },
+          },
+        },
+      },
+      '/api/groups': {
+        get: {
+          summary: "Foydalanuvchining barcha guruhlarini olish",
+          tags: ['Groups'],
+          security: [{ bearerAuth: [] }],
+          responses: {
+            200: {
+              description: "Guruhlar ro'yxati qaytarildi",
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      success: { type: 'boolean', example: true },
+                      data: {
+                        type: 'array',
+                        items: { $ref: '#/components/schemas/GroupResponse' },
+                      },
+                    },
+                  },
+                },
+              },
+            },
+            401: { description: 'Avtorizatsiyadan o\'tilmagan' },
+          },
+        },
+        post: {
+          summary: 'Yangi guruh yaratish',
+          tags: ['Groups'],
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/CreateGroupRequest' } },
+            },
+          },
+          responses: {
+            201: { description: 'Guruh muvaffaqiyatli yaratildi' },
+            400: { description: 'Validatsiya xatoligi' },
+            401: { description: 'Avtorizatsiyadan o\'tilmagan' },
+          },
+        },
+      },
+      '/api/groups/{id}': {
+        get: {
+          summary: "Bitta guruh ma'lumotlarini olish",
+          tags: ['Groups'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              in: 'path',
+              name: 'id',
+              required: true,
+              schema: { type: 'string' },
+              description: 'Guruh ID-si',
+            },
+          ],
+          responses: {
+            200: { description: "Guruh ma'lumotlari qaytarildi" },
+            403: { description: "Bu guruhga ruxsatingiz yo'q" },
+            404: { description: 'Guruh topilmadi' },
+          },
+        },
+        put: {
+          summary: 'Guruh ma\'lumotlarini yangilash',
+          tags: ['Groups'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              in: 'path',
+              name: 'id',
+              required: true,
+              schema: { type: 'string' },
+              description: 'Guruh ID-si',
+            },
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/UpdateGroupRequest' } },
+            },
+          },
+          responses: {
+            200: { description: 'Guruh yangilandi' },
+            400: { description: 'Validatsiya xatoligi' },
+            403: { description: "Bu guruhga ruxsatingiz yo'q" },
+            404: { description: 'Guruh topilmadi' },
+          },
+        },
+        delete: {
+          summary: "Guruhni o'chirish",
+          tags: ['Groups'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              in: 'path',
+              name: 'id',
+              required: true,
+              schema: { type: 'string' },
+              description: 'Guruh ID-si',
+            },
+          ],
+          responses: {
+            200: { description: "Guruh o'chirildi" },
+            403: { description: "Bu guruhga ruxsatingiz yo'q" },
+            404: { description: 'Guruh topilmadi' },
+          },
+        },
+      },
+      '/api/groups/{groupId}/students': {
+        get: {
+          summary: "Guruhdagi faol o'quvchilar ro'yxati",
+          tags: ['Students'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              in: 'path',
+              name: 'groupId',
+              required: true,
+              schema: { type: 'string' },
+              description: 'Guruh ID-si',
+            },
+          ],
+          responses: {
+            200: { description: "O'quvchilar ro'yxati qaytarildi" },
+            403: { description: "Bu guruhga ruxsatingiz yo'q" },
+            404: { description: 'Guruh topilmadi' },
+          },
+        },
+        post: {
+          summary: "Guruhga o'quvchi qo'shish (Yangi yoki Mavjud)",
+          tags: ['Students'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              in: 'path',
+              name: 'groupId',
+              required: true,
+              schema: { type: 'string' },
+              description: 'Guruh ID-si',
+            },
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/AddStudentRequest' } },
+            },
+          },
+          responses: {
+            201: { description: "O'quvchi guruhga biriktirildi" },
+            400: { description: 'Validatsiya xatosi' },
+            409: { description: "O'quvchi allaqachon shu guruhda" },
+          },
+        },
+      },
+      '/api/groups/{groupId}/students/{studentId}': {
+        delete: {
+          summary: "O'quvchini guruhdan chiqarish (status: stopped)",
+          tags: ['Students'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              in: 'path',
+              name: 'groupId',
+              required: true,
+              schema: { type: 'string' },
+            },
+            {
+              in: 'path',
+              name: 'studentId',
+              required: true,
+              schema: { type: 'string' },
+            },
+          ],
+          responses: {
+            200: { description: "O'quvchi guruhdan chiqarildi" },
+            404: { description: "Guruh yoki o'quvchi topilmadi" },
+          },
+        },
+      },
+      '/api/students/search': {
+        get: {
+          summary: "O'quvchini telefon raqami bo'yicha qidirish",
+          tags: ['Students'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              in: 'query',
+              name: 'phone',
+              schema: { type: 'string' },
+              description: 'Qidirilayotgan telefon raqami',
+            },
+          ],
+          responses: {
+            200: { description: "Topilgan o'quvchilar ro'yxati" },
+          },
+        },
+      },
+      '/api/students/{id}': {
+        get: {
+          summary: "O'quvchi to'liq profili",
+          tags: ['Students'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              in: 'path',
+              name: 'id',
+              required: true,
+              schema: { type: 'string' },
+              description: "O'quvchi ID-si",
+            },
+          ],
+          responses: {
+            200: { description: "O'quvchi profili qaytarildi" },
+            403: { description: 'Ruxsat yo\'q' },
+            404: { description: "O'quvchi topilmadi" },
+          },
+        },
+        put: {
+          summary: "O'quvchi shaxsiy ma'lumotlarini tahrirlash",
+          tags: ['Students'],
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              in: 'path',
+              name: 'id',
+              required: true,
+              schema: { type: 'string' },
+              description: "O'quvchi ID-si",
+            },
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': { schema: { $ref: '#/components/schemas/UpdateStudentRequest' } },
+            },
+          },
+          responses: {
+            200: { description: "O'quvchi yangilandi" },
+            404: { description: "O'quvchi topilmadi" },
           },
         },
       },

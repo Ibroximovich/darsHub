@@ -70,4 +70,10 @@ export const authService = {
     const response = await api.get('/auth/me');
     return response.data;
   },
+
+  // PUT /api/auth/profile
+  updateProfile: async (data: { fullName: string; phone?: string }): Promise<ApiResponse> => {
+    const response = await api.put('/auth/profile', data);
+    return response.data;
+  },
 };

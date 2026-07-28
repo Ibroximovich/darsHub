@@ -6,51 +6,45 @@ import { RegisterPage } from './pages/auth/RegisterPage';
 import { VerifyEmailPage } from './pages/auth/VerifyEmailPage';
 import { ForgotPasswordPage } from './pages/auth/ForgotPasswordPage';
 import { ResetPasswordPage } from './pages/auth/ResetPasswordPage';
-import { DashboardPage } from './pages/DashboardPage';
+import { DashboardLayout } from './layouts/DashboardLayout';
+import { GroupsPage } from './pages/dashboard/GroupsPage';
+import { GroupDetailPage } from './pages/dashboard/GroupDetailPage';
+import { StudentsPage } from './pages/dashboard/StudentsPage';
+import { StudentProfilePage } from './pages/dashboard/StudentProfilePage';
+import { UserProfilePage } from './pages/dashboard/UserProfilePage';
 
 export const App: React.FC = () => {
   return (
     <ConfigProvider
       theme={{
-        algorithm: theme.darkAlgorithm,
+        algorithm: theme.defaultAlgorithm,
         token: {
-          colorPrimary: '#6366f1', // Indigo 500
-          colorBgContainer: '#0f172a', // Slate 900
-          colorBgElevated: '#1e293b', // Slate 800
-          colorBorder: '#334155', // Slate 700
+          colorPrimary: '#0F766E',
           borderRadius: 10,
-          controlHeight: 40,
-          fontSize: 14,
-          fontFamily:
-            "Plus Jakarta Sans, Inter, system-ui, -apple-system, sans-serif",
-        },
-        components: {
-          Form: {
-            itemMarginBottom: 16,
-          },
-          Input: {
-            colorBgContainer: '#0b0f19',
-            activeBorderColor: '#6366f1',
-            hoverBorderColor: '#818cf8',
-          },
-          Button: {
-            colorPrimary: '#6366f1',
-            colorPrimaryHover: '#4f46e5',
-            fontWeight: 700,
-          },
+          fontFamily: "Inter, system-ui, -apple-system, sans-serif",
         },
       }}
     >
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="/" element={<Navigate to="/dashboard/groups" replace />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/verify-email" element={<VerifyEmailPage />} />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
-          <Route path="*" element={<Navigate to="/login" replace />} />
+
+          {/* Dashboard Shell Nested Routes */}
+          <Route path="/dashboard" element={<DashboardLayout />}>
+            <Route index element={<Navigate to="/dashboard/groups" replace />} />
+            <Route path="groups" element={<GroupsPage />} />
+            <Route path="groups/:id" element={<GroupDetailPage />} />
+            <Route path="students" element={<StudentsPage />} />
+            <Route path="students/:studentId" element={<StudentProfilePage />} />
+            <Route path="profile" element={<UserProfilePage />} />
+          </Route>
+
+          <Route path="*" element={<Navigate to="/dashboard/groups" replace />} />
         </Routes>
       </BrowserRouter>
     </ConfigProvider>

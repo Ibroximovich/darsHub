@@ -6,6 +6,7 @@ import {
   loginSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  updateProfileSchema,
 } from '../validators/auth.validator';
 import {
   registerUser,
@@ -16,6 +17,7 @@ import {
   forgotPassword,
   resetPassword,
   resendResetCode,
+  updateProfile,
 } from '../services/auth.service';
 import { AppError } from '../middleware/error-handler';
 import { prisma } from '../lib/prisma';
@@ -282,3 +284,30 @@ export async function resendResetCodeController(
     next(error);
   }
 }
+
+/**
+ * PUT /api/auth/profile
+ * Foydalanuvchi ism-sharifi va telefon raqamini tahrirlash (Protected route)
+ */
+export async function updateProfileController(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      throw new AppError("Avtorizatsiyadan o'tilmagan", 401);
+    }
+    const data = updateProfileSchema.parse(req.body);
+    const user = await updateProfile(userId, data);
+    res.status(200).json({
+      success: true,
+      message: "Profil ma'lumotlari yangilandi",
+      user,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+

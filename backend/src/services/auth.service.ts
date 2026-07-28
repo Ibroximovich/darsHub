@@ -9,6 +9,7 @@ import type {
   LoginInput,
   ForgotPasswordInput,
   ResetPasswordInput,
+  UpdateProfileInput,
 } from '../validators/auth.validator';
 
 // ─── Yordamchi funksiyalar ───────────────────────────────────────────────────
@@ -375,3 +376,26 @@ export async function resetPassword(data: ResetPasswordInput) {
 export async function resendResetCode(email: string) {
   return forgotPassword({ email });
 }
+
+/**
+ * UPDATE PROFILE — Foydalanuvchi ism-sharifi va telefon raqamini tahrirlash
+ */
+export async function updateProfile(userId: string, data: UpdateProfileInput) {
+  const user = await prisma.user.update({
+    where: { id: userId },
+    data: {
+      fullName: data.fullName,
+      ...(data.phone !== undefined ? { phone: data.phone } : {}),
+    },
+    select: {
+      id: true,
+      fullName: true,
+      email: true,
+      phone: true,
+      isVerified: true,
+      createdAt: true,
+    },
+  });
+  return user;
+}
+

@@ -20,7 +20,85 @@ model User {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  groups Group[]
+  students Student[]
+
   @@map("users")
+}
+
+model Group {
+  id              String         @id @default(uuid())
+  userId          String
+  user            User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  days            String[] // masalan: ["monday", "wednesday", "friday"]
+  time            String   // masalan: "15:00"
+  price           Int      // so'mda, masalan 500000
+  paymentType     String   // "monthly" yoki "lesson_based"
+  lessonsPerCycle Int?     // faqat paymentType = "lesson_based" bo'lsa qiymat oladi
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  studentLinks    GroupStudent[]
+  lessons         Lesson[]
+
+  @@map("groups")
+}
+
+model Student {
+  id          String         @id @default(uuid())
+  userId      String         // bu o'quvchini birinchi marta qo'shgan repetitor
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  firstName   String
+  lastName    String
+  phone       String
+  parentName  String?        // IXTIYORIY — ota-ona ismi kiritilmasligi mumkin
+  parentPhone String         // MAJBURIY — ota-ona telefon raqami
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  groupLinks  GroupStudent[]
+
+  @@map("students")
+}
+
+model GroupStudent {
+  id          String       @id @default(uuid())
+  groupId     String
+  group       Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  studentId   String
+  student     Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  status      String       @default("active") // "active" yoki "stopped"
+  joinedAt    DateTime     @default(now())
+  stoppedAt   DateTime?
+  attendances Attendance[]
+
+  @@unique([groupId, studentId]) // bitta o'quvchi bitta guruhga faqat bir marta biriktirilishi mumkin
+  @@map("group_students")
+}
+
+model Lesson {
+  id          String       @id @default(uuid())
+  groupId     String
+  group       Group        @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  date        DateTime     @db.Date
+  status      String       // "held" yoki "cancelled"
+  createdAt   DateTime     @default(now())
+  attendances Attendance[]
+
+  @@unique([groupId, date]) // bir guruhda bir kunga faqat bitta dars yozuvi bo'lishi mumkin
+  @@map("lessons")
+}
+
+model Attendance {
+  id             String       @id @default(uuid())
+  lessonId       String
+  lesson         Lesson       @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  groupStudentId String
+  groupStudent   GroupStudent @relation(fields: [groupStudentId], references: [id], onDelete: Cascade)
+  present        Boolean
+  markedAt       DateTime     @default(now())
+
+  @@unique([lessonId, groupStudentId]) // bir o'quvchiga bir darsda faqat bitta davomat yozuvi
+  @@map("attendances")
 }
 
 model EmailVerificationCode {

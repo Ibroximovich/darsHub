@@ -10,6 +10,7 @@ import {
   forgotPasswordController,
   resetPasswordController,
   resendResetCodeController,
+  updateProfileController,
 } from '../controllers/auth.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
 
@@ -35,6 +36,9 @@ router.post('/logout', logout);
 
 // GET /api/auth/me — Joriy foydalanuvchi ma'lumotlari (Protected route)
 router.get('/me', authMiddleware, getMe);
+
+// PUT /api/auth/profile — Profil ma'lumotlarini tahrirlash (Protected route)
+router.put('/profile', authMiddleware, updateProfileController);
 
 // POST /api/auth/forgot-password — Parolni unutganda OTP kod yuborish
 router.post('/forgot-password', forgotPasswordController);
