@@ -13,6 +13,14 @@ const options: swaggerJsdoc.Options = {
     },
     servers: [
       {
+        url: '/',
+        description: 'Current Active Server',
+      },
+      {
+        url: 'https://darshub.onrender.com',
+        description: 'Render Production Server',
+      },
+      {
         url: 'http://localhost:5000',
         description: 'Local Development Server',
       },

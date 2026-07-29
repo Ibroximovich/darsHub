@@ -34,9 +34,14 @@ export const errorHandler = (
   }
 
   // Zod validatsiya xatolari
-  if (err.name === 'ZodError') {
+  if (err.name === 'ZodError' || (err as any).issues || (err as any).errors) {
     const zodErr = err as any;
-    const messages = zodErr.errors.map((e: any) => e.message).join(', ');
+    const issuesList = zodErr.issues || zodErr.errors || [];
+    const messages =
+      Array.isArray(issuesList) && issuesList.length > 0
+        ? issuesList.map((e: any) => e.message || e.code).join(', ')
+        : err.message || 'Validatsiya xatoligi';
+
     res.status(400).json({
       success: false,
       message: messages,
