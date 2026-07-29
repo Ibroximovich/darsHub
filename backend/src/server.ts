@@ -25,15 +25,8 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (
-      !origin ||
-      allowedOrigins.includes(origin) ||
-      origin.endsWith('.vercel.app') ||
-      process.env.NODE_ENV !== 'production'
-    ) {
-      return callback(null, true);
-    }
-    return callback(new Error('CORS taqiqlandi'));
+    if (!origin) return callback(null, true);
+    return callback(null, origin);
   },
   credentials: true,
 }));

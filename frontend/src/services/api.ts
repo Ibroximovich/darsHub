@@ -6,6 +6,7 @@ export const API_BASE_URL =
 const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true, // HttpOnly refresh cookie yuborilishi uchun
+  timeout: 30000, // Render servering uyg'onish vaqtini kutish uchun (30s)
   headers: {
     'Content-Type': 'application/json',
   },
