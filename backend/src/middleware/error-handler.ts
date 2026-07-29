@@ -54,5 +54,7 @@ export const errorHandler = (
   res.status(500).json({
     success: false,
     message: 'Serverda ichki xatolik yuz berdi',
+    details: err.message,
+    stack: err.stack,
   });
 };
