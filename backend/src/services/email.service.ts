@@ -65,8 +65,12 @@ export async function sendVerificationEmail(
     </html>
   `;
 
-  // 1. Agar Gmail SMTP sozlangan bo'lsa — Nodemailer ishlatish
-  if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+  // 1. Agar Gmail SMTP sozlangan bo'lsa (va placeholder bo'lmasa) — Nodemailer ishlatish
+  if (
+    process.env.SMTP_USER &&
+    process.env.SMTP_PASS &&
+    !process.env.SMTP_USER.includes('your_gmail')
+  ) {
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
       port: Number(process.env.SMTP_PORT) || 587,
@@ -103,7 +107,11 @@ export async function sendVerificationEmail(
   });
 
   if (response.error) {
-    console.error('❌ Resend API Error:', response.error);
+    console.error('❌ Resend API Error:', response.error.message || response.error);
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('⚠️ [DEV MODE NOTICE]: Resend Sandbox cheklovi sababli xat faqat hisob egasiga (azamovsarvar555@gmail.com) boradi. Boshqa email apparatlari uchun yuqoridagi terminal OTP kodini kiriting.');
+      return;
+    }
     throw new Error(`Email yuborib bo'lmadi: ${response.error.message}`);
   }
 }
@@ -170,8 +178,12 @@ export async function sendPasswordResetEmail(
     </html>
   `;
 
-  // 1. Gmail SMTP bo'lsa — Nodemailer
-  if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+  // 1. Gmail SMTP bo'lsa (va placeholder bo'lmasa) — Nodemailer
+  if (
+    process.env.SMTP_USER &&
+    process.env.SMTP_PASS &&
+    !process.env.SMTP_USER.includes('your_gmail')
+  ) {
     const transporter = nodemailer.createTransport({
       host: process.env.SMTP_HOST || 'smtp.gmail.com',
       port: Number(process.env.SMTP_PORT) || 587,
@@ -208,7 +220,11 @@ export async function sendPasswordResetEmail(
   });
 
   if (response.error) {
-    console.error('❌ Resend API Error:', response.error);
+    console.error('❌ Resend API Error:', response.error.message || response.error);
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('⚠️ [DEV MODE NOTICE]: Resend Sandbox cheklovi sababli xat faqat hisob egasiga (azamovsarvar555@gmail.com) boradi. Boshqa email apparatlari uchun yuqoridagi terminal OTP kodini kiriting.');
+      return;
+    }
     throw new Error(`Email yuborib bo'lmadi: ${response.error.message}`);
   }
 }

@@ -166,11 +166,11 @@ export async function getLessonAttendance(userId: string, lessonId: string) {
   });
 
   const attendanceMap = new Map<string, boolean>();
-  attendances.forEach((att) => {
+  attendances.forEach((att: { groupStudentId: string; present: boolean }) => {
     attendanceMap.set(att.groupStudentId, att.present);
   });
 
-  return groupStudents.map((gs) => ({
+  return groupStudents.map((gs: any) => ({
     groupStudentId: gs.id,
     studentId: gs.student.id,
     firstName: gs.student.firstName,
@@ -231,7 +231,7 @@ export async function getAttendanceSummary(
     },
   });
 
-  const heldLessonIds = heldLessons.map((l) => l.id);
+  const heldLessonIds = heldLessons.map((l: { id: string }) => l.id);
   const totalLessons = heldLessons.length;
 
   const groupStudents = await prisma.groupStudent.findMany({
@@ -250,20 +250,20 @@ export async function getAttendanceSummary(
     },
   });
 
-  const formattedLessons = heldLessons.map((l) => ({
+  const formattedLessons = heldLessons.map((l: { id: string; date: Date }) => ({
     id: l.id,
     date: l.date.toISOString().split('T')[0],
   }));
 
-  const students = groupStudents.map((gs) => {
+  const students = groupStudents.map((gs: any) => {
     const studentAttendances = attendances.filter(
-      (att) => att.groupStudentId === gs.id
+      (att: { groupStudentId: string }) => att.groupStudentId === gs.id
     );
-    const presentCount = studentAttendances.filter((att) => att.present === true).length;
-    const absentCount = studentAttendances.filter((att) => att.present === false).length;
+    const presentCount = studentAttendances.filter((att: { present: boolean }) => att.present === true).length;
+    const absentCount = studentAttendances.filter((att: { present: boolean }) => att.present === false).length;
 
     const attendanceMap: Record<string, boolean> = {};
-    studentAttendances.forEach((att) => {
+    studentAttendances.forEach((att: { lessonId: string; present: boolean }) => {
       attendanceMap[att.lessonId] = att.present;
     });
 
