@@ -9,14 +9,43 @@ import {
   CreditCard,
   CheckCircle2,
   XCircle,
+  Minus,
 } from 'lucide-react';
 import { attendanceApi } from '../../api/attendance';
 import type { PaymentType } from '../../types/groups.types';
+import type { AttendanceSummaryResponse } from '../../types/attendance.types';
 
 interface AttendanceSummaryProps {
   groupId: string;
   paymentType?: PaymentType;
   lessonsPerCycle?: number | null;
+}
+
+const UZ_MONTHS = [
+  'Yanvar',
+  'Fevral',
+  'Mart',
+  'Aprel',
+  'May',
+  'Iyun',
+  'Iyul',
+  'Avgust',
+  'Sentabr',
+  'Oktabr',
+  'Noyabr',
+  'Dekabr',
+];
+
+function formatDayHeader(dateStr: string): string {
+  try {
+    const parts = dateStr.split('-');
+    const day = parseInt(parts[2], 10);
+    const month = parseInt(parts[1], 10);
+    const monthName = UZ_MONTHS[month - 1]?.slice(0, 3) || '';
+    return `${day}-${monthName}`;
+  } catch {
+    return dateStr;
+  }
 }
 
 export const AttendanceSummary: React.FC<AttendanceSummaryProps> = ({
@@ -49,21 +78,6 @@ export const AttendanceSummary: React.FC<AttendanceSummaryProps> = ({
     setSelectedMonth(`${y}-${m}`);
   };
 
-const UZ_MONTHS = [
-  'Yanvar',
-  'Fevral',
-  'Mart',
-  'Aprel',
-  'May',
-  'Iyun',
-  'Iyul',
-  'Avgust',
-  'Sentabr',
-  'Oktabr',
-  'Noyabr',
-  'Dekabr',
-];
-
   const formatMonthLabel = (monthStr: string) => {
     try {
       const [year, month] = monthStr.split('-').map(Number);
@@ -78,7 +92,7 @@ const UZ_MONTHS = [
 
   // Fetch summary query
   const {
-    data: summaryList = [],
+    data: summaryData = { lessons: [], students: [] } as AttendanceSummaryResponse,
     isLoading,
     isError,
     refetch,
@@ -88,6 +102,7 @@ const UZ_MONTHS = [
     enabled: Boolean(groupId),
   });
 
+  const { lessons = [], students = [] } = summaryData;
   const maxCycleLessons = lessonsPerCycle || 12;
 
   return (
@@ -100,7 +115,7 @@ const UZ_MONTHS = [
             <span>Davomat Hisoboti</span>
           </h3>
           <p className="text-xs text-stone-500 font-medium mt-0.5">
-            O'quvchilarning darslarga qatnashishi ko'rsatkichlari
+            O'quvchilarning kunlar bo'yicha darslarga qatnashishi jadvali
           </p>
         </div>
 
@@ -142,28 +157,42 @@ const UZ_MONTHS = [
             Qayta urinish
           </button>
         </div>
-      ) : summaryList.length === 0 ? (
+      ) : students.length === 0 ? (
         <div className="py-12 text-center text-stone-500 text-xs">
           Ushbu oy uchun darslar va davomat ma'lumotlari topilmadi.
         </div>
       ) : (
-        /* Summary Table */
+        /* Summary Matrix Table */
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="border-b border-stone-200 text-[11px] font-bold text-stone-500 uppercase tracking-wider bg-stone-50/60">
-                <th className="py-3 px-4 rounded-l-lg">O'quvchi (F.I.SH)</th>
-                <th className="py-3 px-4 text-center">Jami Darslar</th>
-                <th className="py-3 px-4 text-center">Kelgan</th>
-                <th className="py-3 px-4 text-center">Kelmagan</th>
+                <th className="py-3 px-4 rounded-l-lg whitespace-nowrap min-w-[140px] sticky left-0 bg-stone-50 z-10 border-r border-stone-200/40">
+                  O'quvchi (F.I.SH)
+                </th>
+
+                {/* Real-time Lesson Date Columns */}
+                {lessons.map((l) => (
+                  <th
+                    key={l.id}
+                    className="py-3 px-2 text-center whitespace-nowrap min-w-[50px] border-r border-stone-200/30 text-stone-700 font-bold"
+                    title={l.date}
+                  >
+                    {formatDayHeader(l.date)}
+                  </th>
+                ))}
+
+                <th className="py-3 px-3 text-center whitespace-nowrap">Jami</th>
+                <th className="py-3 px-3 text-center whitespace-nowrap">Kelgan</th>
+                <th className="py-3 px-3 text-center whitespace-nowrap">Kelmagan</th>
                 {paymentType === 'lesson_based' && (
-                  <th className="py-3 px-4">Tsikl Progress (12 Dars)</th>
+                  <th className="py-3 px-4 min-w-[150px]">Tsikl Progress</th>
                 )}
-                <th className="py-3 px-4 text-right rounded-r-lg">Holat</th>
+                <th className="py-3 px-4 text-right rounded-r-lg whitespace-nowrap">Holat</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100">
-              {summaryList.map((item) => {
+              {students.map((item) => {
                 const percent =
                   item.totalLessons > 0
                     ? Math.round((item.present / item.totalLessons) * 100)
@@ -171,22 +200,48 @@ const UZ_MONTHS = [
 
                 return (
                   <tr key={item.groupStudentId} className="hover:bg-stone-50/50">
-                    <td className="py-3 px-4 font-bold text-stone-900">
+                    <td className="py-3 px-4 font-bold text-stone-900 sticky left-0 bg-white z-10 border-r border-stone-200/40 shadow-2xs">
                       {item.firstName} {item.lastName}
                     </td>
 
-                    <td className="py-3 px-4 text-center font-semibold text-stone-700">
+                    {/* Render Real-Time Attendance for Each Lesson Date */}
+                    {lessons.map((l) => {
+                      const present = item.attendanceMap?.[l.id];
+
+                      return (
+                        <td
+                          key={l.id}
+                          className="py-3 px-2 text-center border-r border-stone-200/30"
+                        >
+                          {present === true ? (
+                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-emerald-100 text-emerald-700 font-bold text-[11px] mx-auto shadow-2xs">
+                              ✓
+                            </span>
+                          ) : present === false ? (
+                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-md bg-red-100 text-red-700 font-bold text-[11px] mx-auto shadow-2xs">
+                              ✕
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center justify-center w-6 h-6 text-stone-300 mx-auto">
+                              <Minus className="w-3 h-3" />
+                            </span>
+                          )}
+                        </td>
+                      );
+                    })}
+
+                    <td className="py-3 px-3 text-center font-semibold text-stone-700">
                       {item.totalLessons} ta
                     </td>
 
-                    <td className="py-3 px-4 text-center font-bold text-emerald-700">
+                    <td className="py-3 px-3 text-center font-bold text-emerald-700">
                       <span className="inline-flex items-center gap-1 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/60">
                         <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                         {item.present}
                       </span>
                     </td>
 
-                    <td className="py-3 px-4 text-center font-bold text-red-700">
+                    <td className="py-3 px-3 text-center font-bold text-red-700">
                       <span className="inline-flex items-center gap-1 bg-red-50 px-2 py-0.5 rounded border border-red-200/60">
                         <XCircle className="w-3 h-3 text-red-500" />
                         {item.absent}
@@ -225,7 +280,7 @@ const UZ_MONTHS = [
                       </td>
                     )}
 
-                    <td className="py-3 px-4 text-right">
+                    <td className="py-3 px-4 text-right whitespace-nowrap">
                       {item.cycleCompleted ? (
                         <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold bg-amber-50 text-amber-800 border border-amber-300 shadow-2xs">
                           <CreditCard className="w-3.5 h-3.5 text-amber-600" />

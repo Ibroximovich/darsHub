@@ -222,7 +222,13 @@ export async function getAttendanceSummary(
         lte: endDate,
       },
     },
-    select: { id: true },
+    orderBy: {
+      date: 'asc',
+    },
+    select: {
+      id: true,
+      date: true,
+    },
   });
 
   const heldLessonIds = heldLessons.map((l) => l.id);
@@ -244,12 +250,22 @@ export async function getAttendanceSummary(
     },
   });
 
-  return groupStudents.map((gs) => {
+  const formattedLessons = heldLessons.map((l) => ({
+    id: l.id,
+    date: l.date.toISOString().split('T')[0],
+  }));
+
+  const students = groupStudents.map((gs) => {
     const studentAttendances = attendances.filter(
       (att) => att.groupStudentId === gs.id
     );
     const presentCount = studentAttendances.filter((att) => att.present === true).length;
     const absentCount = studentAttendances.filter((att) => att.present === false).length;
+
+    const attendanceMap: Record<string, boolean> = {};
+    studentAttendances.forEach((att) => {
+      attendanceMap[att.lessonId] = att.present;
+    });
 
     let cycleCompleted: boolean | undefined = undefined;
     if (group.paymentType === 'lesson_based' && group.lessonsPerCycle) {
@@ -264,7 +280,13 @@ export async function getAttendanceSummary(
       totalLessons,
       present: presentCount,
       absent: absentCount,
+      attendanceMap,
       ...(cycleCompleted !== undefined ? { cycleCompleted } : {}),
     };
   });
+
+  return {
+    lessons: formattedLessons,
+    students,
+  };
 }

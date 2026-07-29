@@ -24,6 +24,11 @@ export interface SaveAttendancePayload {
   }>;
 }
 
+export interface LessonDateItem {
+  id: string;
+  date: string;
+}
+
 export interface AttendanceSummaryItem {
   groupStudentId: string;
   studentId: string;
@@ -32,5 +37,11 @@ export interface AttendanceSummaryItem {
   totalLessons: number;
   present: number;
   absent: number;
+  attendanceMap?: Record<string, boolean>;
   cycleCompleted?: boolean;
+}
+
+export interface AttendanceSummaryResponse {
+  lessons: LessonDateItem[];
+  students: AttendanceSummaryItem[];
 }

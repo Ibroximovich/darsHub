@@ -3,7 +3,7 @@ import type {
   Lesson,
   LessonStatus,
   AttendanceRecord,
-  AttendanceSummaryItem,
+  AttendanceSummaryResponse,
 } from '../types/attendance.types';
 
 export const attendanceApi = {
@@ -47,10 +47,14 @@ export const attendanceApi = {
   getAttendanceSummary: async (
     groupId: string,
     month?: string
-  ): Promise<AttendanceSummaryItem[]> => {
+  ): Promise<AttendanceSummaryResponse> => {
     const response = await api.get(`/groups/${groupId}/attendance/summary`, {
       params: { month },
     });
-    return response.data.summary || [];
+    const summary = response.data.summary;
+    if (Array.isArray(summary)) {
+      return { lessons: [], students: summary };
+    }
+    return summary || { lessons: [], students: [] };
   },
 };
