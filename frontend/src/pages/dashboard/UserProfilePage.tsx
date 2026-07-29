@@ -10,7 +10,6 @@ import {
   Users,
   LogOut,
   ArrowLeft,
-  GraduationCap,
   Loader2,
   CheckCircle2,
   AlertCircle,

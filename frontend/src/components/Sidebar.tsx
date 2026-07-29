@@ -50,7 +50,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ user }) => {
     }
   };
 
-  const navItems = [
+  interface NavItem {
+    name: string;
+    path: string;
+    icon: any;
+    enabled: boolean;
+    badge?: string;
+  }
+
+  const navItems: NavItem[] = [
     {
       name: "Guruhlar",
       path: "/dashboard/groups",

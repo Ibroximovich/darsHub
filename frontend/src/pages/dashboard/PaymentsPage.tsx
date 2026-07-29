@@ -13,7 +13,7 @@ import {
   Phone,
   Users,
 } from 'lucide-react';
-import { paymentsApi, type PaymentsSummary } from '../../api/payments';
+import { paymentsApi } from '../../api/payments';
 import { PaymentStatCard } from '../../components/payments/PaymentStatCard';
 
 const UZ_MONTHS = [

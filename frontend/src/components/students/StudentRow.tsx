@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MoreVertical, User, Phone, UserCheck, Trash2 } from 'lucide-react';
+import { MoreVertical, User, Phone, Trash2 } from 'lucide-react';
 import type { GroupStudentItem } from '../../types/students.types';
 import { formatPhoneDisplay } from '../../utils/phone.utils';
 

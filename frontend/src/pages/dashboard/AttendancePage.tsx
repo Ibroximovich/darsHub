@@ -6,13 +6,11 @@ import {
   Clock,
   CalendarDays,
   Loader2,
-  Users,
   CheckCircle2,
-  XCircle,
   AlertCircle,
 } from 'lucide-react';
 import { groupsApi } from '../../api/groups';
-import type { Group, DayOfWeek } from '../../types/groups.types';
+import type { DayOfWeek } from '../../types/groups.types';
 import { TodayLessonCard } from '../../components/attendance/TodayLessonCard';
 import { AttendanceSummary } from '../../components/attendance/AttendanceSummary';
 
