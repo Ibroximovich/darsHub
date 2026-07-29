@@ -15,8 +15,38 @@ interface GroupPaymentsListProps {
   groupId: string;
 }
 
+const UZ_MONTHS = [
+  'Yanvar',
+  'Fevral',
+  'Mart',
+  'Aprel',
+  'May',
+  'Iyun',
+  'Iyul',
+  'Avgust',
+  'Sentabr',
+  'Oktabr',
+  'Noyabr',
+  'Dekabr',
+];
+
 function formatAmount(amount: number): string {
   return amount.toLocaleString('uz-UZ').replace(/,/g, ' ') + " so'm";
+}
+
+function formatPeriodLabel(periodStr?: string): string {
+  if (!periodStr) return '';
+  if (/^\d{4}-\d{2}$/.test(periodStr)) {
+    const [year, month] = periodStr.split('-').map(Number);
+    if (month >= 1 && month <= 12) {
+      return `${UZ_MONTHS[month - 1]}, ${year}`;
+    }
+  }
+  if (periodStr.startsWith('cycle-')) {
+    const cycleNum = periodStr.replace('cycle-', '');
+    return `${cycleNum}-sikl`;
+  }
+  return periodStr;
 }
 
 export const GroupPaymentsList: React.FC<GroupPaymentsListProps> = ({
@@ -143,7 +173,7 @@ export const GroupPaymentsList: React.FC<GroupPaymentsListProps> = ({
             <span>Guruh To'lovlari</span>
           </h3>
           <p className="text-xs text-stone-500 font-medium mt-0.5">
-            Davr: <strong className="text-stone-700">{payments[0]?.period}</strong>
+            Davr: <strong className="text-stone-700">{formatPeriodLabel(payments[0]?.period)}</strong>
           </p>
         </div>
 

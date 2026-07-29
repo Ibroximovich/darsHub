@@ -49,14 +49,28 @@ export const AttendanceSummary: React.FC<AttendanceSummaryProps> = ({
     setSelectedMonth(`${y}-${m}`);
   };
 
+const UZ_MONTHS = [
+  'Yanvar',
+  'Fevral',
+  'Mart',
+  'Aprel',
+  'May',
+  'Iyun',
+  'Iyul',
+  'Avgust',
+  'Sentabr',
+  'Oktabr',
+  'Noyabr',
+  'Dekabr',
+];
+
   const formatMonthLabel = (monthStr: string) => {
     try {
       const [year, month] = monthStr.split('-').map(Number);
-      const d = new Date(year, month - 1, 1);
-      return new Intl.DateTimeFormat('uz-UZ', {
-        month: 'long',
-        year: 'numeric',
-      }).format(d);
+      if (month >= 1 && month <= 12) {
+        return `${UZ_MONTHS[month - 1]}, ${year}`;
+      }
+      return monthStr;
     } catch {
       return monthStr;
     }
