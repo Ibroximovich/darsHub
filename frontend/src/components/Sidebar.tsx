@@ -65,10 +65,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ user }) => {
     },
     {
       name: "Davomat",
-      path: "#",
+      path: "/dashboard/attendance",
       icon: CalendarCheck,
-      enabled: false,
-      badge: "Tez orada",
+      enabled: true,
     },
     {
       name: "To'lovlar",

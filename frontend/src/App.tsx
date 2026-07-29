@@ -12,6 +12,7 @@ import { GroupDetailPage } from './pages/dashboard/GroupDetailPage';
 import { StudentsPage } from './pages/dashboard/StudentsPage';
 import { StudentProfilePage } from './pages/dashboard/StudentProfilePage';
 import { UserProfilePage } from './pages/dashboard/UserProfilePage';
+import { AttendancePage } from './pages/dashboard/AttendancePage';
 
 export const App: React.FC = () => {
   return (
@@ -41,6 +42,7 @@ export const App: React.FC = () => {
             <Route path="groups/:id" element={<GroupDetailPage />} />
             <Route path="students" element={<StudentsPage />} />
             <Route path="students/:studentId" element={<StudentProfilePage />} />
+            <Route path="attendance" element={<AttendancePage />} />
             <Route path="profile" element={<UserProfilePage />} />
           </Route>
 
