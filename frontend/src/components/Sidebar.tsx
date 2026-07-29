@@ -71,10 +71,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ user }) => {
     },
     {
       name: "To'lovlar",
-      path: "#",
+      path: "/dashboard/payments",
       icon: CreditCard,
-      enabled: false,
-      badge: "Tez orada",
+      enabled: true,
     },
   ];
 

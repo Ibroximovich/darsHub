@@ -12,6 +12,7 @@ import {
   AlertCircle,
   Trash2,
   CalendarCheck,
+  CreditCard,
 } from 'lucide-react';
 import { groupsApi } from '../../api/groups';
 import { studentsApi } from '../../api/students';
@@ -21,6 +22,7 @@ import { StudentRow } from '../../components/students/StudentRow';
 import { AddStudentModal } from '../../components/students/AddStudentModal';
 import { TodayLessonCard } from '../../components/attendance/TodayLessonCard';
 import { AttendanceSummary } from '../../components/attendance/AttendanceSummary';
+import { GroupPaymentsList } from '../../components/payments/GroupPaymentsList';
 import { Modal } from '../../components/ui/Modal';
 import toast from 'react-hot-toast';
 
@@ -39,7 +41,7 @@ export const GroupDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
-  const [activeTab, setActiveTab] = useState<'students' | 'summary'>('students');
+  const [activeTab, setActiveTab] = useState<'students' | 'summary' | 'payments'>('students');
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [removingStudent, setRemovingStudent] = useState<GroupStudentItem | null>(null);
 
@@ -187,6 +189,18 @@ export const GroupDetailPage: React.FC = () => {
           <CalendarCheck className="w-4 h-4" />
           <span>Davomat hisoboti</span>
         </button>
+
+        <button
+          onClick={() => setActiveTab('payments')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-xs font-bold border-b-2 transition-all ${
+            activeTab === 'payments'
+              ? 'border-[#0F766E] text-[#0F766E]'
+              : 'border-transparent text-stone-500 hover:text-stone-900'
+          }`}
+        >
+          <CreditCard className="w-4 h-4" />
+          <span>To'lovlar</span>
+        </button>
       </div>
 
       {/* Tab 1: Students List */}
@@ -265,7 +279,7 @@ export const GroupDetailPage: React.FC = () => {
             </div>
           )}
         </div>
-      ) : (
+      ) : activeTab === 'summary' ? (
         /* Tab 2: Attendance Summary */
         id && (
           <AttendanceSummary
@@ -274,6 +288,9 @@ export const GroupDetailPage: React.FC = () => {
             lessonsPerCycle={group?.lessonsPerCycle}
           />
         )
+      ) : (
+        /* Tab 3: Payments */
+        id && <GroupPaymentsList groupId={id} />
       )}
 
       {/* Add Student Modal */}

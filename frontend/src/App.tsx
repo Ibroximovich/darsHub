@@ -13,6 +13,7 @@ import { StudentsPage } from './pages/dashboard/StudentsPage';
 import { StudentProfilePage } from './pages/dashboard/StudentProfilePage';
 import { UserProfilePage } from './pages/dashboard/UserProfilePage';
 import { AttendancePage } from './pages/dashboard/AttendancePage';
+import { PaymentsPage } from './pages/dashboard/PaymentsPage';
 
 export const App: React.FC = () => {
   return (
@@ -43,6 +44,7 @@ export const App: React.FC = () => {
             <Route path="students" element={<StudentsPage />} />
             <Route path="students/:studentId" element={<StudentProfilePage />} />
             <Route path="attendance" element={<AttendancePage />} />
+            <Route path="payments" element={<PaymentsPage />} />
             <Route path="profile" element={<UserProfilePage />} />
           </Route>
 

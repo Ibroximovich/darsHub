@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.routes';
 import groupsRoutes from './routes/groups.routes';
 import studentsRoutes from './routes/students.routes';
 import attendanceRoutes from './routes/attendance.routes';
+import paymentsRoutes from './routes/payments.routes';
 import { errorHandler } from './middleware/error-handler';
 
 const app = express();
@@ -69,6 +70,9 @@ app.use('/api/students', studentsRoutes);
 
 // Attendance & Lessons routes
 app.use('/api', attendanceRoutes);
+
+// Payments routes
+app.use('/api', paymentsRoutes);
 
 // ─── Markazlashtirilgan xatolarni qayta ishlash ─────────────────────────────
 

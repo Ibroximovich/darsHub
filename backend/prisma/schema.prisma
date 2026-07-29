@@ -70,9 +70,24 @@ model GroupStudent {
   joinedAt    DateTime     @default(now())
   stoppedAt   DateTime?
   attendances Attendance[]
+  payments    Payment[]
 
   @@unique([groupId, studentId]) // bitta o'quvchi bitta guruhga faqat bir marta biriktirilishi mumkin
   @@map("group_students")
+}
+
+model Payment {
+  id             String       @id @default(uuid())
+  groupStudentId String
+  groupStudent   GroupStudent @relation(fields: [groupStudentId], references: [id], onDelete: Cascade)
+  period         String       // monthly uchun "2026-07", lesson_based uchun "cycle-1", "cycle-2" kabi
+  amount         Int          // so'mda, masalan 500000
+  status         String       @default("unpaid") // "paid" yoki "unpaid"
+  paidAt         DateTime?
+  createdAt      DateTime     @default(now())
+
+  @@unique([groupStudentId, period]) // bitta o'quvchi + bitta davr uchun faqat bitta to'lov yozuvi
+  @@map("payments")
 }
 
 model Lesson {
