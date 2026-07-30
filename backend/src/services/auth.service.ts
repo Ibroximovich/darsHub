@@ -25,9 +25,10 @@ function generateOTPCode(): string {
  * JWT Access Token yaratish (15 daqiqa)
  */
 function generateAccessToken(userId: string, email: string, tokenVersion: number): string {
+  const secret = process.env.JWT_SECRET || 'darshub_default_jwt_secret_key_2026';
   return jwt.sign(
     { userId, email, tokenVersion },
-    process.env.JWT_SECRET as string,
+    secret,
     { expiresIn: '15m' }
   );
 }
@@ -36,9 +37,10 @@ function generateAccessToken(userId: string, email: string, tokenVersion: number
  * JWT Refresh Token yaratish (7 kun)
  */
 function generateRefreshToken(userId: string, tokenVersion: number): string {
+  const secret = process.env.JWT_REFRESH_SECRET || 'darshub_default_jwt_refresh_secret_key_2026';
   return jwt.sign(
     { userId, tokenVersion },
-    process.env.JWT_REFRESH_SECRET as string,
+    secret,
     { expiresIn: '7d' }
   );
 }
@@ -249,10 +251,8 @@ export async function loginUser(data: LoginInput) {
  */
 export async function refreshTokenService(token: string) {
   try {
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_REFRESH_SECRET as string
-    ) as { userId: string; tokenVersion?: number };
+    const secret = process.env.JWT_REFRESH_SECRET || 'darshub_default_jwt_refresh_secret_key_2026';
+    const decoded = jwt.verify(token, secret) as { userId: string; tokenVersion?: number };
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
