@@ -113,6 +113,7 @@ export async function registerUser(data: RegisterInput) {
   return {
     message: 'Kod email\'ingizga yuborildi',
     userId: user.id,
+    ...(process.env.NODE_ENV !== 'production' ? { devCode: code } : {}),
   };
 }
 

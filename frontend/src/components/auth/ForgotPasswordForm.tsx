@@ -14,7 +14,9 @@ export const ForgotPasswordForm: React.FC = () => {
     setLoading(true);
     setErrorMsg(null);
     try {
-      const response = await authService.forgotPassword(values);
+      const response = await authService.forgotPassword(values);+
+      console.log(response);
+      
       if (response.success) {
         message.success('Parolni tiklash kodi emailingizga yuborildi!');
         navigate('/reset-password', { state: { email: values.email } });

@@ -19,7 +19,7 @@ export const RegisterForm: React.FC = () => {
       console.log('Register response:', response);
       if (response.success) {
         message.success("Ro'yxatdan o'tildi! Emailingizga tasdiqlash kodi yuborildi.");
-        navigate('/verify-email', { state: { email: values.email } });
+        navigate('/verify-email', { state: { email: values.email, devCode: response.devCode } });
       }
     } catch (err: any) {
       const msg = getErrorMessage(

@@ -9,6 +9,7 @@ export const VerifyEmailForm: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const initialEmail = location.state?.email || '';
+  const devCode = location.state?.devCode || '';
 
   const [email, setEmail] = useState<string>(initialEmail);
   const [loading, setLoading] = useState<boolean>(false);
@@ -79,7 +80,7 @@ export const VerifyEmailForm: React.FC = () => {
         name="verify_email_form"
         layout="vertical"
         onFinish={onFinish}
-        initialValues={{ email }}
+        initialValues={{ email, code: devCode }}
         autoComplete="off"
         disabled={loading || resending}
         requiredMark={false}

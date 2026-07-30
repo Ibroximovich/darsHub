@@ -102,16 +102,26 @@ export async function updateGroup(groupId: string, userId: string, data: UpdateG
 
 /**
  * DELETE GROUP — Guruhni o'chirish (egalik tekshiruvi bilan)
- *
- * TODO: Kelajakda studentlar va darslar modullari qo'shilganda,
- * "agar guruhda faol studentlar bo'lsa o'chirishni taqiqlash" logikasini qo'shish kerak.
- * Masalan:
- * const activeStudents = await prisma.student.count({ where: { groupId, isActive: true } });
- * if (activeStudents > 0) throw new AppError('Guruhda faol o\'quvchilar bor, avval ularni o\'chirib tashlang', 400);
+ * Agar guruhda faol o'quvchilar bo'lsa — o'chirishni taqiqlash
  */
 export async function deleteGroup(groupId: string, userId: string) {
   // Avval egalikni tekshiramiz
   await getGroupById(groupId, userId);
+
+  // Guruhda faol o'quvchilar bor-yo'qligini tekshiramiz
+  const activeStudentsCount = await prisma.groupStudent.count({
+    where: {
+      groupId,
+      status: 'active',
+    },
+  });
+
+  if (activeStudentsCount > 0) {
+    throw new AppError(
+      `Guruhda ${activeStudentsCount} ta faol o'quvchi bor. Guruhni o'chirishdan avval barcha o'quvchilarni guruhdan chiqaring.`,
+      400
+    );
+  }
 
   await prisma.group.delete({
     where: { id: groupId },

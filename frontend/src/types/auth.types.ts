@@ -14,6 +14,7 @@ export interface ApiResponse<T = any> {
   user?: User;
   userId?: string;
   data?: T;
+  devCode?: string;
 }
 
 export interface RegisterPayload {
