@@ -80,15 +80,15 @@ app.use(errorHandler);
 
 // ─── Server'ni ishga tushirish ──────────────────────────────────────────────
 
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT) || 5000;
 
-app.listen(PORT, () => {
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`
   ╔══════════════════════════════════════════════════════╗
   ║                                                      ║
   ║   📚 DarsHub API Server                              ║
-  ║   🌐 http://localhost:${PORT}                          ║
-  ║   📖 Swagger UI: http://localhost:${PORT}/api-docs    ║
+  ║   🌐 Port: ${PORT}                                    ║
+  ║   📖 Swagger UI: /api-docs                           ║
   ║   📋 Environment: ${process.env.NODE_ENV || 'development'}                   ║
   ║                                                      ║
   ╚══════════════════════════════════════════════════════╝
