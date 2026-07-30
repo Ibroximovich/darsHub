@@ -97,7 +97,7 @@ export const UserProfilePage: React.FC = () => {
     } catch (err: any) {
       const msg = err?.response?.data?.message || "Server bilan bog'lanishda xatolik";
       toast.error(msg);
-    } fontinally: {
+    } finally {
       setSavingProfile(false);
     }
   };

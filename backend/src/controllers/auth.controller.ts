@@ -35,6 +35,8 @@ export async function register(
     const data = registerSchema.parse(req.body);
     const result = await registerUser(data);
 
+    console.log('Register result:', result);
+
     res.status(201).json({
       success: true,
       ...result,
@@ -165,7 +167,7 @@ export async function logout(
   res.clearCookie('refreshToken', {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
-    sameSite: 'strict',
+    sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
     path: '/',
   });
 
@@ -250,7 +252,7 @@ export async function resetPasswordController(
     res.clearCookie('refreshToken', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       path: '/',
     });
 

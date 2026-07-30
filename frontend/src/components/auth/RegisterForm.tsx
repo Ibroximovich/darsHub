@@ -16,6 +16,7 @@ export const RegisterForm: React.FC = () => {
     setErrorMsg(null);
     try {
       const response = await authService.register(values);
+      console.log('Register response:', response);
       if (response.success) {
         message.success("Ro'yxatdan o'tildi! Emailingizga tasdiqlash kodi yuborildi.");
         navigate('/verify-email', { state: { email: values.email } });
