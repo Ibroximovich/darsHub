@@ -34,11 +34,10 @@ export const errorHandler = (
   }
 
   // Zod validatsiya xatolari
-  if (err.name === 'ZodError' || (err as any).issues || (err as any).errors) {
-    const zodErr = err as any;
-    const issuesList = zodErr.issues || zodErr.errors || [];
+  if (err.name === 'ZodError' || (Array.isArray((err as any).issues) && (err as any).issues.length > 0)) {
+    const issuesList = (err as any).issues || [];
     const messages =
-      Array.isArray(issuesList) && issuesList.length > 0
+      issuesList.length > 0
         ? issuesList.map((e: any) => e.message || e.code).join(', ')
         : err.message || 'Validatsiya xatoligi';
 
