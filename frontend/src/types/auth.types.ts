@@ -3,6 +3,7 @@ export interface User {
   fullName: string;
   email: string;
   phone?: string;
+  role?: string;
   isVerified?: boolean;
   createdAt?: string;
 }

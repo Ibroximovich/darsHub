@@ -10,6 +10,7 @@ declare global {
       user?: {
         id: string;
         email: string;
+        role?: string;
       };
     }
   }
@@ -26,7 +27,7 @@ export interface JwtPayload {
  *
  * 1. Authorization header'dan "Bearer <token>" formatida tokenni olish
  * 2. Tokenni JWT_SECRET va tokenVersion bilan tekshirish
- * 3. To'g'ri bo'lsa req.user ga foydalanuvchi id va email'ini saqlash va next() chaqirish
+ * 3. To'g'ri bo'lsa req.user ga foydalanuvchi id, email va role ma'lumotlarini saqlash hamda next() chaqirish
  * 4. Noto'g'ri/yo'q bo'lsa — 401 xato: "Avtorizatsiyadan o'tilmagan"
  */
 export async function authMiddleware(
@@ -48,20 +49,19 @@ export async function authMiddleware(
       process.env.JWT_SECRET as string
     ) as JwtPayload;
 
-    if (decoded.tokenVersion !== undefined) {
-      const user = await prisma.user.findUnique({
-        where: { id: decoded.userId },
-        select: { tokenVersion: true },
-      });
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.userId },
+      select: { tokenVersion: true, role: true },
+    });
 
-      if (!user || user.tokenVersion !== decoded.tokenVersion) {
-        return next(new AppError('Avtorizatsiyadan o\'tilmagan (Session bekor qilingan)', 401));
-      }
+    if (!user || (decoded.tokenVersion !== undefined && user.tokenVersion !== decoded.tokenVersion)) {
+      return next(new AppError('Avtorizatsiyadan o\'tilmagan (Session bekor qilingan)', 401));
     }
 
     req.user = {
       id: decoded.userId,
       email: decoded.email,
+      role: user.role,
     };
 
     next();

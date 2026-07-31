@@ -10,6 +10,7 @@ import groupsRoutes from './routes/groups.routes';
 import studentsRoutes from './routes/students.routes';
 import attendanceRoutes from './routes/attendance.routes';
 import paymentsRoutes from './routes/payments.routes';
+import adminRoutes from './routes/admin.routes';
 import { errorHandler } from './middleware/error-handler';
 
 const app = express();
@@ -73,6 +74,9 @@ app.use('/api', attendanceRoutes);
 
 // Payments routes
 app.use('/api', paymentsRoutes);
+
+// Admin routes
+app.use('/api/admin', adminRoutes);
 
 // ─── Markazlashtirilgan xatolarni qayta ishlash ─────────────────────────────
 

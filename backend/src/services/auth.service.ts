@@ -153,6 +153,7 @@ export async function verifyEmail(data: VerifyEmailInput) {
       id: user.id,
       fullName: user.fullName,
       email: user.email,
+      role: user.role,
     },
   };
 }
@@ -242,6 +243,7 @@ export async function loginUser(data: LoginInput) {
       fullName: user.fullName,
       email: user.email,
       phone: user.phone,
+      role: user.role,
     },
   };
 }
@@ -394,6 +396,7 @@ export async function updateProfile(userId: string, data: UpdateProfileInput) {
       email: true,
       phone: true,
       isVerified: true,
+      role: true,
       createdAt: true,
     },
   });

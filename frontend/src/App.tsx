@@ -15,6 +15,14 @@ import { UserProfilePage } from './pages/dashboard/UserProfilePage';
 import { AttendancePage } from './pages/dashboard/AttendancePage';
 import { PaymentsPage } from './pages/dashboard/PaymentsPage';
 
+// Admin Layout & Pages
+import { AdminLayout } from './layouts/AdminLayout';
+import { AdminStatsPage } from './pages/admin/AdminStatsPage';
+import { AdminUsersPage } from './pages/admin/AdminUsersPage';
+import { AdminGroupsPage } from './pages/admin/AdminGroupsPage';
+import { AdminStudentsPage } from './pages/admin/AdminStudentsPage';
+import { AdminPaymentsPage } from './pages/admin/AdminPaymentsPage';
+
 export const App: React.FC = () => {
   return (
     <ConfigProvider
@@ -36,7 +44,7 @@ export const App: React.FC = () => {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 
-          {/* Dashboard Shell Nested Routes */}
+          {/* Tutor Dashboard Nested Routes */}
           <Route path="/dashboard" element={<DashboardLayout />}>
             <Route index element={<Navigate to="/dashboard/groups" replace />} />
             <Route path="groups" element={<GroupsPage />} />
@@ -46,6 +54,15 @@ export const App: React.FC = () => {
             <Route path="attendance" element={<AttendancePage />} />
             <Route path="payments" element={<PaymentsPage />} />
             <Route path="profile" element={<UserProfilePage />} />
+          </Route>
+
+          {/* Admin Panel Nested Routes */}
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminStatsPage />} />
+            <Route path="users" element={<AdminUsersPage />} />
+            <Route path="groups" element={<AdminGroupsPage />} />
+            <Route path="students" element={<AdminStudentsPage />} />
+            <Route path="payments" element={<AdminPaymentsPage />} />
           </Route>
 
           <Route path="*" element={<Navigate to="/dashboard/groups" replace />} />

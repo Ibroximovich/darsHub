@@ -200,6 +200,7 @@ export async function getMe(
         email: true,
         phone: true,
         isVerified: true,
+        role: true,
         createdAt: true,
       },
     });

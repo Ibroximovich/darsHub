@@ -9,6 +9,7 @@ import {
   User as UserIcon,
   Loader2,
   AlertCircle,
+  ShieldCheck,
 } from 'lucide-react';
 import { authService } from '../services/auth.service';
 import type { User } from '../types/auth.types';
@@ -83,6 +84,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ user }) => {
       icon: CreditCard,
       enabled: true,
     },
+    ...(user?.role === 'admin'
+      ? [
+          {
+            name: "Admin Panel",
+            path: "/admin",
+            icon: ShieldCheck,
+            enabled: true,
+          },
+        ]
+      : []),
   ];
 
   const isProfileActive = location.pathname === '/dashboard/profile';
