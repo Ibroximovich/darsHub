@@ -15,6 +15,7 @@ import { authService } from '../services/auth.service';
 import type { User } from '../types/auth.types';
 import { Modal } from './ui/Modal';
 import { DarsHubLogo } from './ui/DarsHubLogo';
+import { FeedbackLink } from './FeedbackLink';
 import toast from 'react-hot-toast';
 
 interface SidebarProps {
@@ -114,6 +115,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ user }) => {
 
         {/* User Avatar Card on Mobile Header -> Opens Profile */}
         <div className="flex items-center gap-2">
+          <FeedbackLink variant="mobile" />
+
           <button
             onClick={() => navigate('/dashboard/profile')}
             className={`flex items-center gap-2 px-2 py-1 rounded-xl transition-all ${
@@ -255,6 +258,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ user }) => {
 
         {/* User Info & Logout Footer */}
         <div className="pt-3 border-t border-stone-100">
+          <FeedbackLink className="mb-2.5" />
           <div
             onClick={() => navigate('/dashboard/profile')}
             className={`flex items-center justify-between p-2 rounded-xl border transition-all cursor-pointer group ${

@@ -5,6 +5,7 @@ import { groupsApi } from '../../api/groups';
 import type { Group } from '../../types/groups.types';
 import { GroupCard } from '../../components/groups/GroupCard';
 import { CreateGroupModal } from '../../components/groups/CreateGroupModal';
+import { FeedbackBanner } from '../../components/FeedbackBanner';
 import { Modal } from '../../components/ui/Modal';
 import toast from 'react-hot-toast';
 
@@ -80,6 +81,17 @@ export const GroupsPage: React.FC = () => {
           <span>Yangi guruh</span>
         </button>
       </div>
+
+      {/* First Group Feedback Banner */}
+      {!isLoading && !isError && groups.length >= 1 && (
+        <FeedbackBanner
+          storageKey="feedback_first_group_banner_dismissed"
+          title="🎉 Birinchi guruhingizni yaratdingiz!"
+          message="Ilova haqida fikringiz yoki taklifingiz bo'lsa, to'g'ridan-to'g'ri menga yozing"
+          buttonText="Telegram'da yozish"
+          variant="amber"
+        />
+      )}
 
       {/* Main Content Area */}
       {isLoading ? (
