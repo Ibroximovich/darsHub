@@ -13,6 +13,7 @@ import {
   Loader2,
 } from 'lucide-react';
 import { DarsHubLogo } from '../components/ui/DarsHubLogo';
+import { FeedbackLink } from '../components/FeedbackLink';
 import toast from 'react-hot-toast';
 
 export const AdminLayout: React.FC = () => {
@@ -207,6 +208,7 @@ export const AdminLayout: React.FC = () => {
 
         {/* User Info & Logout */}
         <div className="pt-3 border-t border-stone-800">
+          <FeedbackLink className="mb-2.5" />
           <div className="flex items-center justify-between p-2 rounded-xl bg-stone-800/60 border border-stone-700/50">
             <div className="flex items-center gap-2.5 overflow-hidden">
               <div className="w-8 h-8 rounded-lg bg-amber-500 text-stone-950 flex items-center justify-center text-xs font-bold shrink-0">
