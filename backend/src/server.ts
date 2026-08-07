@@ -11,6 +11,9 @@ import studentsRoutes from './routes/students.routes';
 import attendanceRoutes from './routes/attendance.routes';
 import paymentsRoutes from './routes/payments.routes';
 import adminRoutes from './routes/admin.routes';
+import telegramRoutes from './routes/telegram.routes';
+import { initTelegramBot } from './services/telegram-bot.service';
+import { initCronJobs } from './jobs/index';
 import { errorHandler } from './middleware/error-handler';
 
 const app = express();
@@ -78,6 +81,9 @@ app.use('/api', paymentsRoutes);
 // Admin routes
 app.use('/api/admin', adminRoutes);
 
+// Telegram routes
+app.use('/api/telegram', telegramRoutes);
+
 // ─── Markazlashtirilgan xatolarni qayta ishlash ─────────────────────────────
 
 app.use(errorHandler);
@@ -97,6 +103,12 @@ app.listen(PORT, '0.0.0.0', () => {
   ║                                                      ║
   ╚══════════════════════════════════════════════════════╝
   `);
+
+  // Telegram botni ishga tushirish
+  initTelegramBot();
+
+  // Cron job'larni ishga tushirish
+  initCronJobs();
 });
 
 export default app;

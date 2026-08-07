@@ -10,19 +10,21 @@ datasource db {
 }
 
 model User {
-  id           String   @id @default(uuid())
-  fullName     String
-  email        String   @unique
-  phone        String
-  passwordHash String
-  isVerified   Boolean  @default(false)
-  role         String   @default("user")
-  tokenVersion Int      @default(0)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id              String   @id @default(uuid())
+  fullName        String
+  email           String   @unique
+  phone           String
+  passwordHash    String
+  isVerified      Boolean  @default(false)
+  role            String   @default("user")
+  tokenVersion    Int      @default(0)
+  telegramChatId  String?  // Telegram bot ulangandan so'ng to'ldiriladi
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  groups Group[]
-  students Student[]
+  groups            Group[]
+  students          Student[]
+  notificationLogs  NotificationLog[]
 
   @@map("users")
 }
@@ -135,4 +137,16 @@ model PasswordResetCode {
   createdAt DateTime @default(now())
 
   @@map("password_reset_codes")
+}
+
+model NotificationLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String   // "payment_reminder" yoki "lesson_reminder"
+  refId     String   // payment_reminder uchun "YYYY-MM", lesson_reminder uchun "groupId-YYYY-MM-DD"
+  sentAt    DateTime @default(now())
+
+  @@unique([userId, type, refId])
+  @@map("notification_logs")
 }
