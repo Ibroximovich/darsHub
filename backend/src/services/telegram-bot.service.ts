@@ -37,7 +37,15 @@ export function initTelegramBot(): void {
     return; // Allaqachon ishga tushgan bo'lsa qayta yaratilmaydi
   }
 
-  bot = new TelegramBot(token, { polling: true });
+  bot = new TelegramBot(token, {
+    polling: {
+      interval: 300,
+      autoStart: true,
+      params: {
+        timeout: 10,
+      },
+    },
+  });
 
   console.log('[TelegramBot] ✅ Bot polling rejimida ishga tushdi.');
 
