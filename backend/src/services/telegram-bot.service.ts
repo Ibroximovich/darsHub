@@ -6,6 +6,25 @@ const token = process.env.TELEGRAM_BOT_TOKEN as string;
 let bot: TelegramBot | null = null;
 
 /**
+ * Inline keyboard tugmasi — "🌐 DarsHub'ga o'tish"
+ */
+function getFrontendKeyboard() {
+  const url = process.env.FRONTEND_URL || process.env.CLIENT_URL || 'https://darshub.uz';
+  return {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          {
+            text: "🌐 DarsHub'ga o'tish",
+            url,
+          },
+        ],
+      ],
+    },
+  };
+}
+
+/**
  * Telegram botni polling rejimida ishga tushirish va /start buyrug'ini qayta ishlash
  */
 export function initTelegramBot(): void {
@@ -24,7 +43,11 @@ export function initTelegramBot(): void {
     const userId = match ? match[1].trim() : null;
 
     if (!userId) {
-      await bot!.sendMessage(chatId, '❌ Noto\'g\'ri havola. Iltimos, DarsHub ilovasidan qaytadan ulanish havolasini oling.');
+      await bot!.sendMessage(
+        chatId,
+        `❌ <b>Bog'lanish havolasi noto'g'ri</b>\n\nIltimos, DarsHub saytidagi Sozlamalar bo'limidan 'Telegram'ni ulash' tugmasini bosib qayta urinib ko'ring.`,
+        { parse_mode: 'HTML', ...getFrontendKeyboard() }
+      );
       return;
     }
 
@@ -32,7 +55,21 @@ export function initTelegramBot(): void {
       const user = await prisma.user.findUnique({ where: { id: userId } });
 
       if (!user) {
-        await bot!.sendMessage(chatId, '❌ Foydalanuvchi topilmadi. Iltimos, DarsHub ilovasidan qaytadan ulanish havolasini oling.');
+        await bot!.sendMessage(
+          chatId,
+          `❌ <b>Foydalanuvchi topilmadi</b>\n\nIltimos, DarsHub saytidagi Sozlamalar bo'limidan 'Telegram'ni ulash' tugmasini bosib qayta urinib ko'ring.`,
+          { parse_mode: 'HTML', ...getFrontendKeyboard() }
+        );
+        return;
+      }
+
+      // Foydalanuvchi allaqachon shu chat bilan ulangan bo'lsa
+      if (user.telegramChatId === chatId) {
+        await bot!.sendMessage(
+          chatId,
+          `ℹ️ <b>Siz allaqachon ulangansiz. Xabarnomalar faol.</b>`,
+          { parse_mode: 'HTML', ...getFrontendKeyboard() }
+        );
         return;
       }
 
@@ -44,8 +81,12 @@ export function initTelegramBot(): void {
 
       await bot!.sendMessage(
         chatId,
-        `✅ DarsHub xabarnomalari ulandi!\n\nSalom, *${user.fullName}*! Endi dars va to'lov eslatmalarini shu yerda olasiz. 🎉`,
-        { parse_mode: 'Markdown' }
+        `✅ <b>DarsHub xabarnomalari ulandi!</b>\n\n` +
+        `Endi quyidagi eslatmalarni shu yerda olasiz:\n` +
+        `📅 Dars boshlanishidan 30 daqiqa oldin\n` +
+        `💰 To'lov muddati yaqinlashganda\n\n` +
+        `Savol yoki taklif bo'lsa, shu yerga yozing — men (Sarvar) shaxsan javob beraman.`,
+        { parse_mode: 'HTML', ...getFrontendKeyboard() }
       );
 
       console.log(`[TelegramBot] Foydalanuvchi ulandi: ${user.email} -> chatId: ${chatId}`);
@@ -55,12 +96,13 @@ export function initTelegramBot(): void {
     }
   });
 
-  // /start parametrsiz bosish
+  // /start parametrsiz (oddiy, USERID'siz) bosish
   bot.onText(/^\/start$/, async (msg) => {
     const chatId = msg.chat.id.toString();
     await bot!.sendMessage(
       chatId,
-      '👋 Salom! Bu DarsHub xabarnoma boti.\n\nBotni faollashtirish uchun DarsHub ilovasidan ulanish havolasini oling va shu yerga yuboring.'
+      `❌ <b>Bog'lanish havolasi noto'g'ri</b>\n\nIltimos, DarsHub saytidagi Sozlamalar bo'limidan 'Telegram'ni ulash' tugmasini bosib qayta urinib ko'ring.`,
+      { parse_mode: 'HTML', ...getFrontendKeyboard() }
     );
   });
 
