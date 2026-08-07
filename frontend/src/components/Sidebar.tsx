@@ -10,6 +10,7 @@ import {
   Loader2,
   AlertCircle,
   ShieldCheck,
+  Settings,
 } from 'lucide-react';
 import { authService } from '../services/auth.service';
 import type { User } from '../types/auth.types';
@@ -83,6 +84,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ user }) => {
       name: "To'lovlar",
       path: "/dashboard/payments",
       icon: CreditCard,
+      enabled: true,
+    },
+    {
+      name: "Sozlamalar",
+      path: "/dashboard/settings",
+      icon: Settings,
       enabled: true,
     },
     ...(user?.role === 'admin'

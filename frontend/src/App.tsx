@@ -14,6 +14,7 @@ import { StudentProfilePage } from './pages/dashboard/StudentProfilePage';
 import { UserProfilePage } from './pages/dashboard/UserProfilePage';
 import { AttendancePage } from './pages/dashboard/AttendancePage';
 import { PaymentsPage } from './pages/dashboard/PaymentsPage';
+import { SettingsPage } from './pages/dashboard/SettingsPage';
 
 // Admin Layout & Pages
 import { AdminLayout } from './layouts/AdminLayout';
@@ -54,6 +55,7 @@ export const App: React.FC = () => {
             <Route path="attendance" element={<AttendancePage />} />
             <Route path="payments" element={<PaymentsPage />} />
             <Route path="profile" element={<UserProfilePage />} />
+            <Route path="settings" element={<SettingsPage />} />
           </Route>
 
           {/* Admin Panel Nested Routes */}
