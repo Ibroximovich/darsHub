@@ -8,8 +8,8 @@ import { sendTelegramMessage } from '../services/telegram-bot.service';
  * 1. "monthly" guruhlar uchun: Oy oxiriga aynan 3 kun qolgan bo'lsa, to'lamaganlar ro'yxatini yuboradi.
  * 2. "lesson_based" guruhlar uchun: 12 ta (yoki lessonsPerCycle) dars to'lganda to'lov qilmaganlar ro'yxatini yuboradi.
  */
-export async function runPaymentReminderJob(): Promise<void> {
-  console.log('[PaymentReminder] Job ishga tushdi:', new Date().toISOString());
+export async function runPaymentReminderJob(force = false): Promise<void> {
+  console.log('[PaymentReminder] Job ishga tushdi (force=' + force + '):', new Date().toISOString());
 
   try {
     const now = new Date();
@@ -42,9 +42,9 @@ export async function runPaymentReminderJob(): Promise<void> {
       try {
         const unpaidList: { studentName: string; groupName: string; amount: number; note?: string }[] = [];
 
-        // ─── A) Monthly guruhlar (oy tugashiga 3 kun qolganda) ─────────────
-        if (daysUntilMonthEnd === 3) {
-          const alreadySentMonthly = await prisma.notificationLog.findUnique({
+        // ─── A) Monthly guruhlar (oy tugashiga 3 kun qolganda yoki force=true) ─────
+        if (daysUntilMonthEnd === 3 || force) {
+          const alreadySentMonthly = force ? null : await prisma.notificationLog.findUnique({
             where: {
               userId_type_refId: {
                 userId: user.id,
@@ -105,7 +105,7 @@ export async function runPaymentReminderJob(): Promise<void> {
             // Eslatma refId: groupId + linkId + cyclePeriod
             const refId = `lb-${link.id}-${cyclePeriod}`;
 
-            const alreadySentCycle = await prisma.notificationLog.findUnique({
+            const alreadySentCycle = force ? null : await prisma.notificationLog.findUnique({
               where: {
                 userId_type_refId: {
                   userId: user.id,
@@ -120,12 +120,12 @@ export async function runPaymentReminderJob(): Promise<void> {
               const payment = link.payments.find(p => p.period === cyclePeriod);
               const isUnpaid = !payment || payment.status === 'unpaid';
 
-              if (isUnpaid && heldLessonsCount > 0 && heldLessonsCount % lessonsPerCycle === 0) {
+              if (isUnpaid && (force || (heldLessonsCount > 0 && heldLessonsCount % lessonsPerCycle === 0))) {
                 unpaidList.push({
                   studentName: `${link.student.firstName} ${link.student.lastName}`,
                   groupName: group.name,
                   amount: payment ? payment.amount : group.price,
-                  note: `${lessonsPerCycle} ta dars yakunlandi (sikl ${cycleNumber})`,
+                  note: `${lessonsPerCycle} ta dars (sikl ${cycleNumber})`,
                 });
 
                 await prisma.notificationLog.create({
