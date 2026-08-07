@@ -76,6 +76,9 @@ export function initTelegramBot(): void {
 export async function sendTelegramMessage(chatId: string | null, text: string): Promise<void> {
   if (!chatId) return;
   if (!bot) {
+    initTelegramBot();
+  }
+  if (!bot) {
     console.warn('[TelegramBot] Bot ishga tushmagan. Xabar yuborilmadi.');
     return;
   }

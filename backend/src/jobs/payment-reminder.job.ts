@@ -71,13 +71,15 @@ export async function runPaymentReminderJob(force = false): Promise<void> {
             }
 
             if (unpaidList.length > 0) {
-              await prisma.notificationLog.create({
-                data: {
-                  userId: user.id,
-                  type: 'payment_reminder',
-                  refId: currentMonthlyPeriod,
-                },
-              });
+              try {
+                await prisma.notificationLog.create({
+                  data: {
+                    userId: user.id,
+                    type: 'payment_reminder',
+                    refId: currentMonthlyPeriod,
+                  },
+                });
+              } catch {}
             }
           }
         }
@@ -128,13 +130,15 @@ export async function runPaymentReminderJob(force = false): Promise<void> {
                   note: `${lessonsPerCycle} ta dars (sikl ${cycleNumber})`,
                 });
 
-                await prisma.notificationLog.create({
-                  data: {
-                    userId: user.id,
-                    type: 'payment_reminder',
-                    refId,
-                  },
-                });
+                try {
+                  await prisma.notificationLog.create({
+                    data: {
+                      userId: user.id,
+                      type: 'payment_reminder',
+                      refId,
+                    },
+                  });
+                } catch {}
               }
             }
           }
