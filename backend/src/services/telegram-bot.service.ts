@@ -33,16 +33,29 @@ export function initTelegramBot(): void {
     return;
   }
 
+  if (bot) {
+    return; // Allaqachon ishga tushgan bo'lsa qayta yaratilmaydi
+  }
+
   bot = new TelegramBot(token, { polling: true });
 
   console.log('[TelegramBot] ✅ Bot polling rejimida ishga tushdi.');
 
-  // /start <userId> buyrug'ini qabul qilish
-  bot.onText(/\/start (.+)/, async (msg, match) => {
-    const chatId = msg.chat.id.toString();
-    const userId = match ? match[1].trim() : null;
+  // /start buyrug'ini (har qanday parametr yoki formati bo'lsa ham) universal tutib olish
+  bot.on('message', async (msg) => {
+    if (!msg.text) return;
 
-    if (!userId) {
+    const text = msg.text.trim();
+    if (!text.startsWith('/start')) return;
+
+    const chatId = msg.chat.id.toString();
+
+    // /start va /start@BotName o'chirib, faqat parametrni ajratib olish
+    const parts = text.split(/\s+/);
+    const param = parts.length > 1 ? parts[1].trim() : null;
+
+    // 1. Agar parametrsiz bo'lsa (shunchaki /start bosilsa)
+    if (!param) {
       await bot!.sendMessage(
         chatId,
         `❌ <b>Bog'lanish havolasi noto'g'ri</b>\n\nIltimos, DarsHub saytidagi Sozlamalar bo'limidan 'Telegram'ni ulash' tugmasini bosib qayta urinib ko'ring.`,
@@ -50,6 +63,8 @@ export function initTelegramBot(): void {
       );
       return;
     }
+
+    const userId = param;
 
     try {
       const user = await prisma.user.findUnique({ where: { id: userId } });
@@ -96,18 +111,11 @@ export function initTelegramBot(): void {
     }
   });
 
-  // /start parametrsiz (oddiy, USERID'siz) bosish
-  bot.onText(/^\/start$/, async (msg) => {
-    const chatId = msg.chat.id.toString();
-    await bot!.sendMessage(
-      chatId,
-      `❌ <b>Bog'lanish havolasi noto'g'ri</b>\n\nIltimos, DarsHub saytidagi Sozlamalar bo'limidan 'Telegram'ni ulash' tugmasini bosib qayta urinib ko'ring.`,
-      { parse_mode: 'HTML', ...getFrontendKeyboard() }
-    );
-  });
-
   bot.on('polling_error', (err) => {
-    console.error('[TelegramBot] Polling xato:', err.message);
+    // 409 Conflict xatosini bot qayta urinishi uchun e'tiborsiz qoldiramiz
+    if (!err.message.includes('409 Conflict')) {
+      console.error('[TelegramBot] Polling xato:', err.message);
+    }
   });
 }
 
