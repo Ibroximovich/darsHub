@@ -6,8 +6,8 @@ import { prisma } from '../lib/prisma';
  *
  * auth.middleware'dan KEYIN ishlaydi (req.user mavjud bo'lishi kerak).
  *
- * Muhim: Admin (isAdmin === true) foydalanuvchilar har qanday obuna tekshiruvidan
- * BUTUNLAY ozod qilinadi va ularga hech qachon 402 qaytarilmaydi.
+ * Muhim: Admin (isAdmin === true) bo'lgan foydalanuvchi DB dan tekshirilib,
+ * har qanday obuna tekshiruvisiz darhol o'tkazib yuboriladi (next()).
  */
 export async function requireSubscription(
   req: Request,
@@ -20,14 +20,8 @@ export async function requireSubscription(
       return;
     }
 
-    // ── 0. Boshida DARHOL adminlikni tekshiramiz (req.user bo'yicha) ─────────
-    if (req.user.isAdmin === true) {
-      next();
-      return;
-    }
-
-    // DB dan obuna holati va adminlik ma'lumotini olamiz
-    const user = await prisma.user.findUnique({
+    // Database'dan HAQIQIY User yozuvini Prisma orqali qidirib olamiz
+    const dbUser = await prisma.user.findUnique({
       where: { id: req.user.id },
       select: {
         subscriptionStatus: true,
@@ -37,37 +31,34 @@ export async function requireSubscription(
       },
     });
 
-    if (!user) {
+    if (!dbUser) {
       res.status(401).json({ success: false, message: 'Foydalanuvchi topilmadi' });
       return;
     }
 
-    // ── DB bo'yicha ham admin bo'lsa — darhol o'tkazamiz ──────────────────────
-    if (user.isAdmin === true) {
-      next();
-      return;
+    // Admin bo'lsa — obuna tekshiruvisiz darhol o'tkazish
+    if (dbUser.isAdmin === true) {
+      return next();
     }
 
     const now = new Date();
 
     // ── 1. Faol obuna ──────────────────────────────────────────────────────
     if (
-      user.subscriptionStatus === 'active' &&
-      user.subscriptionExpiresAt &&
-      user.subscriptionExpiresAt > now
+      dbUser.subscriptionStatus === 'active' &&
+      dbUser.subscriptionExpiresAt &&
+      dbUser.subscriptionExpiresAt > now
     ) {
-      next();
-      return;
+      return next();
     }
 
     // ── 2. Faol trial ──────────────────────────────────────────────────────
-    if (user.subscriptionStatus === 'trial' && user.trialEndsAt > now) {
-      next();
-      return;
+    if (dbUser.subscriptionStatus === 'trial' && dbUser.trialEndsAt > now) {
+      return next();
     }
 
     // ── 3. Muddati o'tgan "active" → DB da "expired" ga yangilash ─────────
-    if (user.subscriptionStatus === 'active') {
+    if (dbUser.subscriptionStatus === 'active') {
       await prisma.user.update({
         where: { id: req.user.id },
         data: { subscriptionStatus: 'expired' },
