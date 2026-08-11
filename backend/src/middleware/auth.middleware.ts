@@ -11,6 +11,7 @@ declare global {
         id: string;
         email: string;
         role?: string;
+        isAdmin?: boolean;
       };
     }
   }
@@ -27,7 +28,7 @@ export interface JwtPayload {
  *
  * 1. Authorization header'dan "Bearer <token>" formatida tokenni olish
  * 2. Tokenni JWT_SECRET va tokenVersion bilan tekshirish
- * 3. To'g'ri bo'lsa req.user ga foydalanuvchi id, email va role ma'lumotlarini saqlash hamda next() chaqirish
+ * 3. To'g'ri bo'lsa req.user ga foydalanuvchi id, email, role va isAdmin ma'lumotlarini saqlash hamda next() chaqirish
  * 4. Noto'g'ri/yo'q bo'lsa — 401 xato: "Avtorizatsiyadan o'tilmagan"
  */
 export async function authMiddleware(
@@ -51,7 +52,7 @@ export async function authMiddleware(
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.userId },
-      select: { tokenVersion: true, role: true },
+      select: { tokenVersion: true, role: true, isAdmin: true },
     });
 
     if (!user || (decoded.tokenVersion !== undefined && user.tokenVersion !== decoded.tokenVersion)) {
@@ -62,6 +63,7 @@ export async function authMiddleware(
       id: decoded.userId,
       email: decoded.email,
       role: user.role,
+      isAdmin: user.isAdmin,
     };
 
     next();

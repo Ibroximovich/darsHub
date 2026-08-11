@@ -6,11 +6,8 @@ import { prisma } from '../lib/prisma';
  *
  * auth.middleware'dan KEYIN ishlaydi (req.user mavjud bo'lishi kerak).
  *
- * Tekshirish tartibi:
- * 1. "active" va subscriptionExpiresAt > hozir → ruxsat
- * 2. "trial"  va trialEndsAt > hozir             → ruxsat
- * 3. Boshqa barcha holatlar                       → 402 SUBSCRIPTION_REQUIRED
- *    (agar "active" lekin muddati o'tgan bo'lsa — DB da "expired" ga yangilab qo'yamiz)
+ * Muhim: Admin (isAdmin === true) foydalanuvchilar har qanday obuna tekshiruvidan
+ * BUTUNLAY ozod qilinadi va ularga hech qachon 402 qaytarilmaydi.
  */
 export async function requireSubscription(
   req: Request,
@@ -23,7 +20,13 @@ export async function requireSubscription(
       return;
     }
 
-    // Doim DB dan yangi ma'lumot olamiz (token ichidagi eski bo'lishi mumkin)
+    // ── 0. Boshida DARHOL adminlikni tekshiramiz (req.user bo'yicha) ─────────
+    if (req.user.isAdmin === true) {
+      next();
+      return;
+    }
+
+    // DB dan obuna holati va adminlik ma'lumotini olamiz
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
       select: {
@@ -39,8 +42,8 @@ export async function requireSubscription(
       return;
     }
 
-    // Admin uchun har doim ruxsat
-    if (user.isAdmin) {
+    // ── DB bo'yicha ham admin bo'lsa — darhol o'tkazamiz ──────────────────────
+    if (user.isAdmin === true) {
       next();
       return;
     }
