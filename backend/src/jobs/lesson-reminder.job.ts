@@ -13,8 +13,8 @@ const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'frid
  */
 export async function runLessonReminderJob(): Promise<void> {
   try {
-    const now = new Date();
-    const todayName = DAY_NAMES[now.getDay()];
+    const now = new Date(new Date().getTime() + (5 * 60 * 60 * 1000));
+    const todayName = DAY_NAMES[now.getUTCDay()];
     const todayDateStr = now.toISOString().split('T')[0]; // "YYYY-MM-DD"
 
     // Telegramga ulangan va bugungi dars kuni bo'lgan guruhlarni olish
@@ -42,8 +42,8 @@ export async function runLessonReminderJob(): Promise<void> {
           if (isNaN(lessonHour) || isNaN(lessonMinute)) continue;
 
           // Dars vaqtini bugungi sana bilan birlashtirish
-          const lessonTime = new Date();
-          lessonTime.setHours(lessonHour, lessonMinute, 0, 0);
+          const lessonTime = new Date(now);
+          lessonTime.setUTCHours(lessonHour, lessonMinute, 0, 0);
 
           // Dars boshlanishigacha qolgan vaqt (daqiqa)
           const minutesUntilLesson = (lessonTime.getTime() - now.getTime()) / (1000 * 60);
