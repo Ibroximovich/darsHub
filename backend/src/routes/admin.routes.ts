@@ -12,6 +12,7 @@ import {
   getAdminPayments,
   activateSubscription,
   deactivateSubscription,
+  updateUserTrial,
 } from '../controllers/admin.controller';
 
 const router = Router();
@@ -44,6 +45,9 @@ router.post('/users/:userId/activate', activateSubscription);
 
 // POST /api/admin/users/:userId/deactivate — Obunani bekor qilish
 router.post('/users/:userId/deactivate', deactivateSubscription);
+
+// PATCH /api/admin/users/:userId/trial — Trial sanasini qo'lda tahrirlash
+router.patch('/users/:userId/trial', updateUserTrial);
 
 export default router;
 

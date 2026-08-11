@@ -8,7 +8,7 @@ import {
   Clock,
   XCircle,
   Loader2,
-  ChevronDown,
+  Pencil,
 } from 'lucide-react';
 import type { AdminUser } from '../../types/admin.types';
 import { adminSubscriptionApi } from '../../api/admin';
@@ -48,33 +48,130 @@ function getStatusBadge(status: AdminUser['subscriptionStatus']): StatusBadge {
   }
 }
 
-function formatDate(dateStr: string | null | undefined): string {
+// O'qish uchun o'zbekcha sana formati (masalan: "25 Avgust, 2026")
+function formatTrialDate(dateStr: string | null | undefined): string {
   if (!dateStr) return '—';
-  return new Date(dateStr).toLocaleDateString('uz-UZ', {
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  });
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return '—';
+
+  const day = date.getDate();
+  const monthNames = [
+    'Avgust', 'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
+    'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'
+  ];
+  // Standard JS month 0-indexed
+  const monthIndex = date.getMonth();
+  const monthNameUz = [
+    'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
+    'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'
+  ][monthIndex];
+
+  return `${day} ${monthNameUz}, ${date.getFullYear()}`;
 }
 
-function getExpiryDate(user: AdminUser): string {
-  if (user.subscriptionStatus === 'trial') return formatDate(user.trialEndsAt);
-  if (user.subscriptionStatus === 'active') return formatDate(user.subscriptionExpiresAt);
-  return '—';
+// HTML <input type="date"> uchun YYYY-MM-DD format
+function toInputDateValue(dateStr: string | null | undefined): string {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return '';
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
+
+interface InlineTrialEditorProps {
+  userId: string;
+  currentTrialEndsAt: string;
+  onSave: (userId: string, isoDate: string) => void;
+  isUpdating: boolean;
+}
+
+const InlineTrialEditor: React.FC<InlineTrialEditorProps> = ({
+  userId,
+  currentTrialEndsAt,
+  onSave,
+  isUpdating,
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
+
+  if (isUpdating) {
+    return (
+      <div className="flex items-center gap-1.5 text-teal-700 text-xs font-medium">
+        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        <span>Saqlanmoqda...</span>
+      </div>
+    );
+  }
+
+  if (isEditing) {
+    return (
+      <input
+        type="date"
+        defaultValue={toInputDateValue(currentTrialEndsAt)}
+        autoFocus
+        onChange={(e) => {
+          if (e.target.value) {
+            const iso = new Date(`${e.target.value}T00:00:00.000Z`).toISOString();
+            onSave(userId, iso);
+            setIsEditing(false);
+          }
+        }}
+        onBlur={() => setIsEditing(false)}
+        className="px-2 py-1 text-xs border border-teal-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/30 bg-white text-stone-900 shadow-xs"
+      />
+    );
+  }
+
+  return (
+    <button
+      onClick={() => setIsEditing(true)}
+      type="button"
+      className="group flex items-center gap-1.5 hover:bg-stone-100 px-2 py-1 rounded-lg transition-colors text-left"
+      title="Trial sanasini tahrirlash uchun bosing"
+    >
+      <span className="text-xs font-medium text-stone-700">
+        {formatTrialDate(currentTrialEndsAt)}
+      </span>
+      <Pencil className="w-3 h-3 text-stone-400 opacity-60 group-hover:opacity-100 group-hover:text-teal-600 transition-all" />
+    </button>
+  );
+};
 
 export const UserTable: React.FC<UserTableProps> = ({ users }) => {
   const [activateTarget, setActivateTarget] = useState<AdminUser | null>(null);
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const queryClient = useQueryClient();
 
   const { mutate: deactivate, isPending: deactivating } = useMutation({
     mutationFn: (userId: string) => adminSubscriptionApi.deactivateUser(userId),
-    onSuccess: (_, userId) => {
-      toast.success("Obuna bekor qilindi");
+    onSuccess: () => {
+      toast.success('Obuna bekor qilindi');
       queryClient.invalidateQueries({ queryKey: ['admin-users'] });
     },
-    onError: () => toast.error("Xatolik yuz berdi"),
+    onError: () => toast.error('Xatolik yuz berdi'),
   });
+
+  const { mutate: updateTrial } = useMutation({
+    mutationFn: ({ userId, trialEndsAt }: { userId: string; trialEndsAt: string }) => {
+      setUpdatingUserId(userId);
+      return adminSubscriptionApi.updateUserTrial(userId, trialEndsAt);
+    },
+    onSuccess: () => {
+      toast.success('Trial sanasi yangilandi');
+      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+    },
+    onError: () => {
+      toast.error('Trial sanasini yangilashda xatolik yuz berdi');
+    },
+    onSettled: () => {
+      setUpdatingUserId(null);
+    },
+  });
+
+  const handleTrialDateSave = (userId: string, newIsoDate: string) => {
+    updateTrial({ userId, trialEndsAt: newIsoDate });
+  };
 
   if (users.length === 0) {
     return (
@@ -101,7 +198,7 @@ export const UserTable: React.FC<UserTableProps> = ({ users }) => {
                 Holat
               </th>
               <th className="text-left px-4 py-3.5 text-xs font-semibold text-stone-500 uppercase tracking-wide">
-                Tugash sanasi
+                Trial tugash sanasi
               </th>
               <th className="px-4 py-3.5" />
             </tr>
@@ -109,6 +206,8 @@ export const UserTable: React.FC<UserTableProps> = ({ users }) => {
           <tbody className="divide-y divide-stone-100">
             {users.map((user) => {
               const badge = getStatusBadge(user.subscriptionStatus);
+              const isUpdatingThisUser = updatingUserId === user.id;
+
               return (
                 <tr key={user.id} className="bg-white hover:bg-stone-50/60 transition-colors">
                   {/* Name + email */}
@@ -148,8 +247,15 @@ export const UserTable: React.FC<UserTableProps> = ({ users }) => {
                     </span>
                   </td>
 
-                  {/* Expiry */}
-                  <td className="px-4 py-4 text-xs text-stone-500">{getExpiryDate(user)}</td>
+                  {/* Trial Expiry Date inline editor */}
+                  <td className="px-4 py-4">
+                    <InlineTrialEditor
+                      userId={user.id}
+                      currentTrialEndsAt={user.trialEndsAt}
+                      onSave={handleTrialDateSave}
+                      isUpdating={isUpdatingThisUser}
+                    />
+                  </td>
 
                   {/* Actions */}
                   <td className="px-4 py-4">
@@ -189,6 +295,8 @@ export const UserTable: React.FC<UserTableProps> = ({ users }) => {
       <div className="md:hidden space-y-3">
         {users.map((user) => {
           const badge = getStatusBadge(user.subscriptionStatus);
+          const isUpdatingThisUser = updatingUserId === user.id;
+
           return (
             <div
               key={user.id}
@@ -209,15 +317,25 @@ export const UserTable: React.FC<UserTableProps> = ({ users }) => {
                     <p className="text-xs text-stone-400 truncate">{user.email}</p>
                   </div>
                 </div>
-                <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border shrink-0 ${badge.className}`}>
+                <span
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold border shrink-0 ${badge.className}`}
+                >
                   {badge.icon}
                   {badge.label}
                 </span>
               </div>
 
-              <div className="text-xs text-stone-500 mb-3 space-y-1">
+              <div className="text-xs text-stone-500 mb-3 space-y-2">
                 <p>📞 {user.phone}</p>
-                <p>📅 Tugash: {getExpiryDate(user)}</p>
+                <div className="flex items-center gap-1">
+                  <span>📅 Trial tugash:</span>
+                  <InlineTrialEditor
+                    userId={user.id}
+                    currentTrialEndsAt={user.trialEndsAt}
+                    onSave={handleTrialDateSave}
+                    isUpdating={isUpdatingThisUser}
+                  />
+                </div>
               </div>
 
               <div className="flex gap-2">

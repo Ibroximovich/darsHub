@@ -19,4 +19,9 @@ export const adminSubscriptionApi = {
   deactivateUser: async (userId: string): Promise<void> => {
     await api.post(`/admin/users/${userId}/deactivate`);
   },
+
+  // PATCH /api/admin/users/:userId/trial
+  updateUserTrial: async (userId: string, trialEndsAt: string): Promise<void> => {
+    await api.patch(`/admin/users/${userId}/trial`, { trialEndsAt });
+  },
 };

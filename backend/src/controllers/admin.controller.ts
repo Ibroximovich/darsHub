@@ -526,3 +526,60 @@ export async function deactivateSubscription(
     next(error);
   }
 }
+/**
+ * PATCH /api/admin/users/:userId/trial
+ * Trial sanasini qo'lda tahrirlash
+ * Body: { trialEndsAt: string } // ISO format
+ */
+export async function updateUserTrial(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { userId } = req.params;
+    const { trialEndsAt } = req.body;
+
+    // Validatsiya — to'g'ri sana formati
+    if (!trialEndsAt || isNaN(Date.parse(trialEndsAt))) {
+      throw new AppError('trialEndsAt to\'g\'ri ISO sana formatida bo\'lishi kerak', 400);
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new AppError('Foydalanuvchi topilmadi', 404);
+    }
+
+    const newDate = new Date(trialEndsAt);
+    const now = new Date();
+
+    // Agar "expired" bo'lsa va sana kelajakda bo'lsa — "trial" ga qaytaramiz
+    const newStatus =
+      user.subscriptionStatus === 'expired' && newDate > now
+        ? 'trial'
+        : user.subscriptionStatus;
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        trialEndsAt: newDate,
+        subscriptionStatus: newStatus,
+      },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        subscriptionStatus: true,
+        trialEndsAt: true,
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Trial sanasi muvaffaqiyatli yangilandi',
+      data: updated,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
