@@ -73,8 +73,8 @@ api.interceptors.response.use(
           originalRequest.url?.includes('/auth');
         if (!isSubscriptionRoute) {
           // Dynamic import — circular dependency oldini olish uchun
-          import('../utils/subscription.store').then(({ useSubscriptionStore }) => {
-            useSubscriptionStore.getState().setSubscriptionRequired(true);
+          import('../utils/subscription.store').then(({ subscriptionStore }) => {
+            subscriptionStore.set(true);
           });
         }
       }

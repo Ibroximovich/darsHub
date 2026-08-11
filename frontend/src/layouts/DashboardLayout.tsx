@@ -7,7 +7,7 @@ import { TrialBanner } from '../components/subscription/TrialBanner';
 import { Paywall } from '../components/subscription/Paywall';
 import { authService } from '../services/auth.service';
 import { subscriptionApi } from '../api/subscription';
-import { useSubscriptionStore } from '../utils/subscription.store';
+import { useSubscriptionRequired } from '../utils/subscription.store';
 import type { User } from '../types/auth.types';
 import { Loader2 } from 'lucide-react';
 
@@ -18,7 +18,7 @@ export const DashboardLayout: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const navigate = useNavigate();
 
-  const subscriptionRequired = useSubscriptionStore((s) => s.subscriptionRequired);
+  const subscriptionRequired = useSubscriptionRequired();
 
   useEffect(() => {
     const fetchUser = async () => {

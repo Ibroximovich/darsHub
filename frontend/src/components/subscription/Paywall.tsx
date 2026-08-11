@@ -7,15 +7,12 @@ import {
   PAYMENT_TELEGRAM_URL,
 } from '../../constants/payment';
 import { authService } from '../../services/auth.service';
-import { useSubscriptionStore } from '../../utils/subscription.store';
+import { subscriptionStore } from '../../utils/subscription.store';
 import { DarsHubLogo } from '../ui/DarsHubLogo';
 
 export const Paywall: React.FC = () => {
   const [copied, setCopied] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
-  const clearSubscriptionRequired = useSubscriptionStore(
-    (s) => s.clearSubscriptionRequired
-  );
 
   const handleCopy = async () => {
     try {
@@ -31,7 +28,7 @@ export const Paywall: React.FC = () => {
     try {
       setLoggingOut(true);
       await authService.logout();
-      clearSubscriptionRequired();
+      subscriptionStore.clear();
       window.location.href = '/login';
     } catch {
       window.location.href = '/login';

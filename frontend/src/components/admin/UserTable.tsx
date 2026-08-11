@@ -56,15 +56,10 @@ function formatTrialDate(dateStr: string | null | undefined): string {
 
   const day = date.getDate();
   const monthNames = [
-    'Avgust', 'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
-    'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'
-  ];
-  // Standard JS month 0-indexed
-  const monthIndex = date.getMonth();
-  const monthNameUz = [
     'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
     'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'
-  ][monthIndex];
+  ];
+  const monthNameUz = monthNames[date.getMonth()];
 
   return `${day} ${monthNameUz}, ${date.getFullYear()}`;
 }
