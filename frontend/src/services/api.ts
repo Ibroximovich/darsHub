@@ -63,6 +63,24 @@ api.interceptors.response.use(
       }
     }
 
+    // ── 402 Obuna muddati tugagan ──────────────────────────────────────────
+    if (error.response?.status === 402) {
+      const code = error.response?.data?.code;
+      if (code === 'SUBSCRIPTION_REQUIRED') {
+        // Subscription/auth route'laridan kelgan 402 ni e'tiborsiz qoldiramiz
+        const isSubscriptionRoute =
+          originalRequest.url?.includes('/subscription') ||
+          originalRequest.url?.includes('/auth');
+        if (!isSubscriptionRoute) {
+          // Dynamic import — circular dependency oldini olish uchun
+          import('../utils/subscription.store').then(({ useSubscriptionStore }) => {
+            useSubscriptionStore.getState().setSubscriptionRequired(true);
+          });
+        }
+      }
+      return Promise.reject(error);
+    }
+
     return Promise.reject(error);
   }
 );

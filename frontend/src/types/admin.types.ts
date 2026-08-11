@@ -20,6 +20,10 @@ export interface AdminUser {
   phone: string;
   role: string;
   isVerified: boolean;
+  isAdmin: boolean;
+  subscriptionStatus: 'trial' | 'active' | 'expired';
+  trialEndsAt: string;
+  subscriptionExpiresAt: string | null;
   createdAt: string;
   _count: {
     groups: number;

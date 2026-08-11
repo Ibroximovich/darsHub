@@ -115,12 +115,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ user }) => {
       icon: Settings,
       enabled: true,
     },
-    ...(user?.role === 'admin'
+    ...(user?.isAdmin
       ? [
           {
             name: 'Admin Panel',
-            shortName: 'Admin', // single word — no line-break
-            path: '/admin',
+            shortName: 'Admin',
+            path: '/dashboard/admin',
             icon: ShieldCheck,
             enabled: true,
           },
