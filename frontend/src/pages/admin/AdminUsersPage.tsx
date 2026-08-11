@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { adminService } from '../../services/admin.service';
+import { adminSubscriptionApi } from '../../api/admin';
 import type { AdminUser, Pagination } from '../../types/admin.types';
 import {
   Search,
@@ -11,10 +12,135 @@ import {
   AlertTriangle,
   UserCheck,
   UserX,
-  Shield,
+  ShieldCheck,
+  CheckCircle,
+  Clock,
+  XCircle,
+  Pencil,
 } from 'lucide-react';
 import { Modal } from '../../components/ui/Modal';
+import { ActivateSubscriptionModal } from '../../components/admin/ActivateSubscriptionModal';
 import toast from 'react-hot-toast';
+
+type StatusBadge = {
+  label: string;
+  icon: React.ReactNode;
+  className: string;
+};
+
+function getStatusBadge(status: AdminUser['subscriptionStatus']): StatusBadge {
+  switch (status) {
+    case 'trial':
+      return {
+        label: 'Trial',
+        icon: <Clock className="w-3 h-3" />,
+        className: 'bg-blue-50 text-blue-700 border-blue-200',
+      };
+    case 'active':
+      return {
+        label: 'Faol',
+        icon: <CheckCircle className="w-3 h-3" />,
+        className: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+      };
+    case 'expired':
+      return {
+        label: 'Tugagan',
+        icon: <XCircle className="w-3 h-3" />,
+        className: 'bg-red-50 text-red-600 border-red-200',
+      };
+    default:
+      return {
+        label: 'Trial',
+        icon: <Clock className="w-3 h-3" />,
+        className: 'bg-blue-50 text-blue-700 border-blue-200',
+      };
+  }
+}
+
+// O'qish uchun o'zbekcha sana formati (masalan: "25 Avgust, 2026")
+function formatTrialDate(dateStr: string | null | undefined): string {
+  if (!dateStr) return '—';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return '—';
+
+  const day = date.getDate();
+  const monthNames = [
+    'Yanvar', 'Fevral', 'Mart', 'Aprel', 'May', 'Iyun',
+    'Iyul', 'Avgust', 'Sentabr', 'Oktabr', 'Noyabr', 'Dekabr'
+  ];
+  const monthNameUz = monthNames[date.getMonth()];
+
+  return `${day} ${monthNameUz}, ${date.getFullYear()}`;
+}
+
+// HTML <input type="date"> uchun YYYY-MM-DD format
+function toInputDateValue(dateStr: string | null | undefined): string {
+  if (!dateStr) return '';
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return '';
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+interface InlineTrialEditorProps {
+  userId: string;
+  currentTrialEndsAt: string;
+  onSave: (userId: string, isoDate: string) => void;
+  isUpdating: boolean;
+}
+
+const InlineTrialEditor: React.FC<InlineTrialEditorProps> = ({
+  userId,
+  currentTrialEndsAt,
+  onSave,
+  isUpdating,
+}) => {
+  const [isEditing, setIsEditing] = useState(false);
+
+  if (isUpdating) {
+    return (
+      <div className="flex items-center gap-1.5 text-teal-700 text-xs font-medium">
+        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        <span>Saqlanmoqda...</span>
+      </div>
+    );
+  }
+
+  if (isEditing) {
+    return (
+      <input
+        type="date"
+        defaultValue={toInputDateValue(currentTrialEndsAt)}
+        autoFocus
+        onChange={(e) => {
+          if (e.target.value) {
+            const iso = new Date(`${e.target.value}T00:00:00.000Z`).toISOString();
+            onSave(userId, iso);
+            setIsEditing(false);
+          }
+        }}
+        onBlur={() => setIsEditing(false)}
+        className="px-2 py-1 text-xs border border-teal-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/30 bg-white text-stone-900 shadow-xs"
+      />
+    );
+  }
+
+  return (
+    <button
+      onClick={() => setIsEditing(true)}
+      type="button"
+      className="group flex items-center gap-1.5 hover:bg-stone-100 px-2 py-1 rounded-lg transition-colors text-left"
+      title="Trial sanasini tahrirlash uchun bosing"
+    >
+      <span className="text-xs font-medium text-stone-700">
+        {formatTrialDate(currentTrialEndsAt)}
+      </span>
+      <Pencil className="w-3 h-3 text-stone-400 opacity-60 group-hover:opacity-100 group-hover:text-teal-600 transition-all" />
+    </button>
+  );
+};
 
 export const AdminUsersPage: React.FC = () => {
   const [users, setUsers] = useState<AdminUser[]>([]);
@@ -33,6 +159,11 @@ export const AdminUsersPage: React.FC = () => {
   const [deleteTargetUser, setDeleteTargetUser] = useState<AdminUser | null>(null);
   const [deleting, setDeleting] = useState<boolean>(false);
 
+  // Subscription management state
+  const [activateTarget, setActivateTarget] = useState<AdminUser | null>(null);
+  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
+  const [deactivatingId, setDeactivatingId] = useState<string | null>(null);
+
   const fetchUsers = async (page = pagination.page, searchQuery = search) => {
     try {
       setLoading(true);
@@ -42,7 +173,7 @@ export const AdminUsersPage: React.FC = () => {
         setPagination(response.pagination);
       }
     } catch {
-      toast.error("Foydalanuvchilarni yuklashda xatolik");
+      toast.error('Foydalanuvchilarni yuklashda xatolik');
     } finally {
       setLoading(false);
     }
@@ -75,6 +206,32 @@ export const AdminUsersPage: React.FC = () => {
     }
   };
 
+  const handleTrialDateSave = async (userId: string, newIsoDate: string) => {
+    try {
+      setUpdatingUserId(userId);
+      await adminSubscriptionApi.updateUserTrial(userId, newIsoDate);
+      toast.success('Trial sanasi yangilandi');
+      fetchUsers(pagination.page, search);
+    } catch {
+      toast.error('Trial sanasini yangilashda xatolik yuz berdi');
+    } finally {
+      setUpdatingUserId(null);
+    }
+  };
+
+  const handleDeactivate = async (userId: string) => {
+    try {
+      setDeactivatingId(userId);
+      await adminSubscriptionApi.deactivateUser(userId);
+      toast.success('Obuna bekor qilindi');
+      fetchUsers(pagination.page, search);
+    } catch {
+      toast.error('Obunani bekor qilishda xatolik');
+    } finally {
+      setDeactivatingId(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header & Search */}
@@ -84,7 +241,7 @@ export const AdminUsersPage: React.FC = () => {
             Foydalanuvchilar Boshqaruvi
           </h1>
           <p className="text-xs text-stone-500 font-medium mt-1">
-            Platformada ro'yxatdan o'tgan barcha repetitorlar va ularning huquqlari
+            Platformada ro'yxatdan o'tgan barcha repetitorlar, obunalar va sinov muddatlari
           </p>
         </div>
 
@@ -109,10 +266,10 @@ export const AdminUsersPage: React.FC = () => {
               <tr className="bg-stone-50/70 border-b border-stone-200/80 text-[11px] font-bold text-stone-500 uppercase tracking-wider">
                 <th className="py-3.5 px-4">Foydalanuvchi</th>
                 <th className="py-3.5 px-4">Telefon</th>
-                <th className="py-3.5 px-4">Roli</th>
+                <th className="py-3.5 px-4">Obuna Holati</th>
+                <th className="py-3.5 px-4">Trial Tugash Sanasi</th>
                 <th className="py-3.5 px-4 text-center">Guruhlar</th>
                 <th className="py-3.5 px-4 text-center">O'quvchilar</th>
-                <th className="py-3.5 px-4">Holati</th>
                 <th className="py-3.5 px-4 text-right">Amallar</th>
               </tr>
             </thead>
@@ -133,68 +290,115 @@ export const AdminUsersPage: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                users.map((u) => (
-                  <tr key={u.id} className="hover:bg-stone-50/50 transition-colors">
-                    <td className="py-3 px-4">
-                      <div className="font-semibold text-stone-900">{u.fullName}</div>
-                      <div className="text-[11px] text-stone-500">{u.email}</div>
-                    </td>
-                    <td className="py-3 px-4 font-mono text-stone-600">{u.phone}</td>
-                    <td className="py-3 px-4">
-                      {u.role === 'admin' ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
-                          <Shield className="w-3 h-3" />
-                          <span>Admin</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-stone-100 text-stone-600">
-                          Repetitor
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-center font-bold text-stone-900">
-                      {u._count?.groups || 0}
-                    </td>
-                    <td className="py-3 px-4 text-center font-bold text-stone-900">
-                      {u._count?.students || 0}
-                    </td>
-                    <td className="py-3 px-4">
-                      {u.isVerified ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600">
-                          <UserCheck className="w-3.5 h-3.5" />
-                          <span>Tasdiqlangan</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-stone-400">
-                          <UserX className="w-3.5 h-3.5" />
-                          <span>Kutilmoqda</span>
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          onClick={() => {
-                            setSelectedUser(u);
-                            setShowViewModal(true);
-                          }}
-                          className="p-1.5 text-stone-500 hover:text-[#0F766E] hover:bg-stone-100 rounded-lg transition-colors"
-                          title="Ko'rish"
+                users.map((u) => {
+                  const badge = getStatusBadge(u.subscriptionStatus);
+                  const isUpdatingThisUser = updatingUserId === u.id;
+                  const isDeactivatingThisUser = deactivatingId === u.id;
+
+                  return (
+                    <tr key={u.id} className="hover:bg-stone-50/50 transition-colors">
+                      {/* Name + email */}
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <div className="font-semibold text-stone-900">{u.fullName}</div>
+                          {u.isAdmin && (
+                            <span title="Admin">
+                              <ShieldCheck className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+                            </span>
+                          )}
+                        </div>
+                        <div className="text-[11px] text-stone-500">{u.email}</div>
+                      </td>
+
+                      {/* Phone */}
+                      <td className="py-3 px-4 font-mono text-stone-600">{u.phone}</td>
+
+                      {/* Subscription Status Badge */}
+                      <td className="py-3 px-4">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${badge.className}`}
                         >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => setDeleteTargetUser(u)}
-                          disabled={u.role === 'admin'}
-                          className="p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
-                          title="O'chirish"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
+                          {badge.icon}
+                          {badge.label}
+                        </span>
+                      </td>
+
+                      {/* Trial Ends At inline editor */}
+                      <td className="py-3 px-4">
+                        <InlineTrialEditor
+                          userId={u.id}
+                          currentTrialEndsAt={u.trialEndsAt}
+                          onSave={handleTrialDateSave}
+                          isUpdating={isUpdatingThisUser}
+                        />
+                      </td>
+
+                      {/* Groups count */}
+                      <td className="py-3 px-4 text-center font-bold text-stone-900">
+                        {u._count?.groups || 0}
+                      </td>
+
+                      {/* Students count */}
+                      <td className="py-3 px-4 text-center font-bold text-stone-900">
+                        {u._count?.students || 0}
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
+                          {/* Activate Button */}
+                          <button
+                            onClick={() => setActivateTarget(u)}
+                            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100 transition-colors"
+                            title="Obunani faollashtirish"
+                          >
+                            <UserCheck className="w-3.5 h-3.5" />
+                            <span>Faollashtirish</span>
+                          </button>
+
+                          {/* Deactivate Button */}
+                          {u.subscriptionStatus === 'active' && !u.isAdmin && (
+                            <button
+                              onClick={() => handleDeactivate(u.id)}
+                              disabled={isDeactivatingThisUser}
+                              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors disabled:opacity-50"
+                              title="Obunani bekor qilish"
+                            >
+                              {isDeactivatingThisUser ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <UserX className="w-3.5 h-3.5" />
+                              )}
+                              <span>Bekor</span>
+                            </button>
+                          )}
+
+                          {/* View Modal Button */}
+                          <button
+                            onClick={() => {
+                              setSelectedUser(u);
+                              setShowViewModal(true);
+                            }}
+                            className="p-1.5 text-stone-500 hover:text-[#0F766E] hover:bg-stone-100 rounded-lg transition-colors"
+                            title="Tafsilotlar"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+
+                          {/* Delete Button */}
+                          <button
+                            onClick={() => setDeleteTargetUser(u)}
+                            disabled={u.isAdmin || u.role === 'admin'}
+                            className="p-1.5 text-stone-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-30 disabled:hover:bg-transparent"
+                            title="O'chirish"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
@@ -232,6 +436,18 @@ export const AdminUsersPage: React.FC = () => {
         )}
       </div>
 
+      {/* Activate Subscription Modal */}
+      {activateTarget && (
+        <ActivateSubscriptionModal
+          userId={activateTarget.id}
+          userName={activateTarget.fullName}
+          onClose={() => {
+            setActivateTarget(null);
+            fetchUsers(pagination.page, search);
+          }}
+        />
+      )}
+
       {/* View User Detail Modal */}
       <Modal
         isOpen={showViewModal}
@@ -257,8 +473,8 @@ export const AdminUsersPage: React.FC = () => {
                 <span className="font-semibold text-stone-800">{selectedUser.phone}</span>
               </div>
               <div className="p-3 bg-stone-50 rounded-xl">
-                <span className="text-stone-400 block text-[10px] uppercase font-bold">Roli</span>
-                <span className="font-semibold text-stone-800 capitalize">{selectedUser.role}</span>
+                <span className="text-stone-400 block text-[10px] uppercase font-bold">Obuna Holati</span>
+                <span className="font-semibold text-stone-800 uppercase">{selectedUser.subscriptionStatus || 'trial'}</span>
               </div>
               <div className="p-3 bg-stone-50 rounded-xl">
                 <span className="text-stone-400 block text-[10px] uppercase font-bold">Guruhlari</span>
@@ -271,9 +487,9 @@ export const AdminUsersPage: React.FC = () => {
             </div>
 
             <div className="p-3 bg-stone-50 rounded-xl text-xs">
-              <span className="text-stone-400 block text-[10px] uppercase font-bold">Ro'yxatdan o'tgan sana</span>
+              <span className="text-stone-400 block text-[10px] uppercase font-bold">Trial Tugash Sanasi</span>
               <span className="font-semibold text-stone-800">
-                {new Date(selectedUser.createdAt).toLocaleString('uz-UZ')}
+                {formatTrialDate(selectedUser.trialEndsAt)}
               </span>
             </div>
           </div>
@@ -314,7 +530,7 @@ export const AdminUsersPage: React.FC = () => {
               Rostdan ham o'chirmoqchimisiz?
             </h4>
             <p className="text-xs text-stone-500 mt-1 leading-relaxed">
-              <strong>{deleteTargetUser?.fullName}</strong> foydalanuvchisi va unga tegishli barcha guruhlar, o'quvchilar va to'lov ma'lumotlari buttunlay o'chiriladi.
+              <strong>{deleteTargetUser?.fullName}</strong> foydalanuvchisi va unga tegishli barcha guruhlar, o'quvchilar va to'lov ma'lumotlari butunlay o'chiriladi.
             </p>
           </div>
         </div>
