@@ -425,3 +425,104 @@ export async function getAdminPayments(
     next(error);
   }
 }
+/**
+ * POST /api/admin/users/:userId/activate
+ * Foydalanuvchi obunasini qo'lda faollashtirish
+ * Body: { months: number }
+ */
+export async function activateSubscription(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { userId } = req.params;
+    const months = Number(req.body.months);
+
+    if (!months || months < 1) {
+      throw new AppError('months kamida 1 bo\'lishi kerak', 400);
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new AppError('Foydalanuvchi topilmadi', 404);
+    }
+
+    // Hali muddati o'tmagan active obuna bo'lsa — ustiga qo'shamiz
+    const now = new Date();
+    const baseDate =
+      user.subscriptionStatus === 'active' &&
+      user.subscriptionExpiresAt &&
+      user.subscriptionExpiresAt > now
+        ? user.subscriptionExpiresAt
+        : now;
+
+    const subscriptionExpiresAt = new Date(
+      baseDate.getTime() + months * 30 * 24 * 60 * 60 * 1000
+    );
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: {
+        subscriptionStatus: 'active',
+        subscriptionExpiresAt,
+      },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        phone: true,
+        subscriptionStatus: true,
+        trialEndsAt: true,
+        subscriptionExpiresAt: true,
+        createdAt: true,
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: `Obuna ${months} oyga faollashtirildi`,
+      data: updated,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * POST /api/admin/users/:userId/deactivate
+ * Foydalanuvchi obunasini qo'lda bekor qilish
+ */
+export async function deactivateSubscription(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { userId } = req.params;
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      throw new AppError('Foydalanuvchi topilmadi', 404);
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: userId },
+      data: { subscriptionStatus: 'expired' },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        subscriptionStatus: true,
+      },
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Obuna bekor qilindi',
+      data: updated,
+    });
+  } catch (error) {
+    next(error);
+  }
+}

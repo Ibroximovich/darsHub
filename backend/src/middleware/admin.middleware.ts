@@ -4,10 +4,9 @@ import { prisma } from '../lib/prisma';
 
 /**
  * REQUIRE ADMIN MIDDLEWARE — Faqat admin foydalanuvchilar kirishi uchun middleware
- * 
- * 1. req.user mavjudligini tekshirish
- * 2. req.user.role === 'admin' ekanligini tekshirish (yoki DB dan role ni tekshirish)
- * 3. Admin bo'lmasa — 403 xato: "Ruxsat berilmagan. Faqat adminlar uchun."
+ *
+ * req.user.id orqali DB dan user ni oladi va isAdmin === true ekanligini tekshiradi.
+ * Admin bo'lmasa — 403 xato: "Ruxsat yo'q"
  */
 export async function requireAdmin(
   req: Request,
@@ -15,22 +14,17 @@ export async function requireAdmin(
   next: NextFunction
 ): Promise<void> {
   try {
-    if (!req.user || !req.user.id) {
+    if (!req.user?.id) {
       return next(new AppError('Avtorizatsiyadan o\'tilmagan', 401));
     }
 
-    let role = req.user.role;
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: { isAdmin: true },
+    });
 
-    if (!role) {
-      const user = await prisma.user.findUnique({
-        where: { id: req.user.id },
-        select: { role: true },
-      });
-      role = user?.role;
-    }
-
-    if (role !== 'admin') {
-      return next(new AppError('Ruxsat berilmagan. Faqat adminlar uchun.', 403));
+    if (!user?.isAdmin) {
+      return next(new AppError('Ruxsat yo\'q. Faqat adminlar uchun.', 403));
     }
 
     next();
@@ -38,3 +32,4 @@ export async function requireAdmin(
     next(error);
   }
 }
+

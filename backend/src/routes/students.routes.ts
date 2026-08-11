@@ -5,11 +5,13 @@ import {
   updateStudentController,
 } from '../controllers/students.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
+import { requireSubscription } from '../middleware/subscription.middleware';
 
 const router = Router();
 
-// Barcha student route'lari authMiddleware orqali himoyalangan
+// Barcha student route'lari authMiddleware va requireSubscription orqali himoyalangan
 router.use(authMiddleware);
+router.use(requireSubscription);
 
 // GET /api/students/search?phone=xxx — Telefon raqami bo'yicha qidirish
 router.get('/search', searchStudentsController);

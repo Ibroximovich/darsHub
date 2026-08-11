@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authMiddleware } from '../middleware/auth.middleware';
+import { requireSubscription } from '../middleware/subscription.middleware';
 import {
   markTodayLessonController,
   getTodayLessonController,
@@ -10,8 +11,9 @@ import {
 
 const router = Router();
 
-// Barcha davomat va darslar route'lari authMiddleware orqali himoyalangan
+// Barcha davomat va darslar route'lari authMiddleware va requireSubscription orqali himoyalangan
 router.use(authMiddleware);
+router.use(requireSubscription);
 
 /**
  * 1. POST /api/groups/:groupId/lessons/today — Bugungi darsni belgilash ("held" | "cancelled")

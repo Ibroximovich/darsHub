@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { authMiddleware } from '../middleware/auth.middleware';
+import { requireSubscription } from '../middleware/subscription.middleware';
 import {
   getGroupPaymentsController,
   updatePaymentStatusController,
@@ -8,8 +9,9 @@ import {
 
 const router = Router();
 
-// Barcha to'lov route'lari authMiddleware orqali himoyalangan
+// Barcha to'lov route'lari authMiddleware va requireSubscription orqali himoyalangan
 router.use(authMiddleware);
+router.use(requireSubscription);
 
 /**
  * GET /api/payments/summary — Umumiy to'lov statistikasi (barcha guruhlar bo'yicha)

@@ -11,6 +11,7 @@ import studentsRoutes from './routes/students.routes';
 import attendanceRoutes from './routes/attendance.routes';
 import paymentsRoutes from './routes/payments.routes';
 import adminRoutes from './routes/admin.routes';
+import subscriptionRoutes from './routes/subscription.routes';
 import telegramRoutes from './routes/telegram.routes';
 import { initTelegramBot } from './services/telegram-bot.service';
 import { initCronJobs } from './jobs/index';
@@ -80,6 +81,9 @@ app.use('/api', paymentsRoutes);
 
 // Admin routes
 app.use('/api/admin', adminRoutes);
+
+// Subscription routes (obuna holati — subscription.middleware ishlatilmaydi)
+app.use('/api/subscription', subscriptionRoutes);
 
 // Telegram routes
 app.use('/api/telegram', telegramRoutes);

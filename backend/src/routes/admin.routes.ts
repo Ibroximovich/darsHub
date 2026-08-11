@@ -10,6 +10,8 @@ import {
   getAdminStudents,
   deleteAdminStudent,
   getAdminPayments,
+  activateSubscription,
+  deactivateSubscription,
 } from '../controllers/admin.controller';
 
 const router = Router();
@@ -36,4 +38,12 @@ router.delete('/students/:id', deleteAdminStudent);
 // GET /api/admin/payments — To'lovlar
 router.get('/payments', getAdminPayments);
 
+// ─── Obuna boshqaruvi ─────────────────────────────────────────────────────────
+// POST /api/admin/users/:userId/activate   — Obunani faollashtirish (body: { months })
+router.post('/users/:userId/activate', activateSubscription);
+
+// POST /api/admin/users/:userId/deactivate — Obunani bekor qilish
+router.post('/users/:userId/deactivate', deactivateSubscription);
+
 export default router;
+

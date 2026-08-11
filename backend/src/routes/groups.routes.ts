@@ -12,11 +12,13 @@ import {
   removeStudentFromGroupController,
 } from '../controllers/students.controller';
 import { authMiddleware } from '../middleware/auth.middleware';
+import { requireSubscription } from '../middleware/subscription.middleware';
 
 const router = Router();
 
-// Barcha guruh route'lari authMiddleware orqali himoyalangan
+// Barcha guruh route'lari authMiddleware va requireSubscription orqali himoyalangan
 router.use(authMiddleware);
+router.use(requireSubscription);
 
 // POST /api/groups — Yangi guruh yaratish
 router.post('/', createGroupController);

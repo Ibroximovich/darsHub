@@ -10,15 +10,24 @@ datasource db {
 }
 
 model User {
-  id              String   @id @default(uuid())
-  fullName        String
-  email           String   @unique
-  phone           String
-  passwordHash    String
-  isVerified      Boolean  @default(false)
-  role            String   @default("user")
-  tokenVersion    Int      @default(0)
-  telegramChatId  String?  // Telegram bot ulangandan so'ng to'ldiriladi
+  id                      String    @id @default(uuid())
+  fullName                String
+  email                   String    @unique
+  phone                   String
+  passwordHash            String
+  isVerified              Boolean   @default(false)
+  role                    String    @default("user")
+  tokenVersion            Int       @default(0)
+  telegramChatId          String?   // Telegram bot ulangandan so'ng to'ldiriladi
+
+  // ─── Obuna tizimi ─────────────────────────────────────────────────────────
+  subscriptionStatus      String    @default("trial") // "trial" | "active" | "expired"
+  trialEndsAt             DateTime  // ro'yxatdan o'tganda createdAt + 7 kun (kodda belgilanadi)
+  subscriptionExpiresAt   DateTime? // faqat "active" holatda to'ldiriladi
+
+  // ─── Admin ────────────────────────────────────────────────────────────────
+  isAdmin                 Boolean   @default(false) // faqat loyiha egasi uchun, qo'lda o'rnatiladi
+
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 

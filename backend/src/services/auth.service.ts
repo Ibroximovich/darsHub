@@ -69,10 +69,13 @@ export async function registerUser(data: RegisterInput) {
 
   let user;
 
+  // Trial 7 kun — ro'yxatdan o'tgan vaqtdan boshlab hisoblanadi
+  const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
   if (existingUnverifiedUser) {
     user = await prisma.user.update({
       where: { id: existingUnverifiedUser.id },
-      data: { fullName, phone, passwordHash },
+      data: { fullName, phone, passwordHash, trialEndsAt },
     });
   } else {
     user = await prisma.user.create({
@@ -82,6 +85,7 @@ export async function registerUser(data: RegisterInput) {
         phone,
         passwordHash,
         isVerified: false,
+        trialEndsAt,
       },
     });
   }
@@ -154,6 +158,10 @@ export async function verifyEmail(data: VerifyEmailInput) {
       fullName: user.fullName,
       email: user.email,
       role: user.role,
+      subscriptionStatus: user.subscriptionStatus,
+      trialEndsAt: user.trialEndsAt,
+      subscriptionExpiresAt: user.subscriptionExpiresAt,
+      isAdmin: user.isAdmin,
     },
   };
 }
@@ -244,6 +252,10 @@ export async function loginUser(data: LoginInput) {
       email: user.email,
       phone: user.phone,
       role: user.role,
+      subscriptionStatus: user.subscriptionStatus,
+      trialEndsAt: user.trialEndsAt,
+      subscriptionExpiresAt: user.subscriptionExpiresAt,
+      isAdmin: user.isAdmin,
     },
   };
 }
