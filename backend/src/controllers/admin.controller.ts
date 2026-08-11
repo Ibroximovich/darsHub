@@ -436,7 +436,7 @@ export async function activateSubscription(
   next: NextFunction
 ): Promise<void> {
   try {
-    const { userId } = req.params;
+    const userId = typeof req.params.userId === 'string' ? req.params.userId : String(req.params.userId || '');
     const months = Number(req.body.months);
 
     if (!months || months < 1) {
@@ -499,7 +499,7 @@ export async function deactivateSubscription(
   next: NextFunction
 ): Promise<void> {
   try {
-    const { userId } = req.params;
+    const userId = typeof req.params.userId === 'string' ? req.params.userId : String(req.params.userId || '');
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
@@ -526,6 +526,7 @@ export async function deactivateSubscription(
     next(error);
   }
 }
+
 /**
  * PATCH /api/admin/users/:userId/trial
  * Trial sanasini qo'lda tahrirlash
@@ -537,7 +538,7 @@ export async function updateUserTrial(
   next: NextFunction
 ): Promise<void> {
   try {
-    const { userId } = req.params;
+    const userId = typeof req.params.userId === 'string' ? req.params.userId : String(req.params.userId || '');
     const { trialEndsAt } = req.body;
 
     // Validatsiya — to'g'ri sana formati
