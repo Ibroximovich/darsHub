@@ -1,8 +1,6 @@
 import TelegramBot from 'node-telegram-bot-api';
 import { prisma } from '../lib/prisma';
 
-const token = process.env.TELEGRAM_BOT_TOKEN as string;
-
 let bot: TelegramBot | null = null;
 
 /**
@@ -28,7 +26,9 @@ function getFrontendKeyboard() {
  * Telegram botni polling rejimida ishga tushirish va /start buyrug'ini qayta ishlash
  */
 export function initTelegramBot(): void {
-  if (!token) {
+  const botToken = process.env.TELEGRAM_BOT_TOKEN;
+
+  if (!botToken) {
     console.warn('[TelegramBot] TELEGRAM_BOT_TOKEN topilmadi. Bot ishga tushmaydi.');
     return;
   }
@@ -37,7 +37,7 @@ export function initTelegramBot(): void {
     return; // Allaqachon ishga tushgan bo'lsa qayta yaratilmaydi
   }
 
-  bot = new TelegramBot(token, {
+  bot = new TelegramBot(botToken, {
     polling: {
       interval: 300,
       autoStart: true,
