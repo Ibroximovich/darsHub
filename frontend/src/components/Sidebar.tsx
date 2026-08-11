@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
   FolderKanban,
@@ -11,6 +11,8 @@ import {
   AlertCircle,
   ShieldCheck,
   Settings,
+  MessageSquarePlus,
+  ChevronDown,
 } from 'lucide-react';
 import { authService } from '../services/auth.service';
 import type { User } from '../types/auth.types';
@@ -18,6 +20,7 @@ import { Modal } from './ui/Modal';
 import { DarsHubLogo } from './ui/DarsHubLogo';
 import { FeedbackLink } from './FeedbackLink';
 import toast from 'react-hot-toast';
+import { FEEDBACK_TELEGRAM_URL } from '../constants/links';
 
 interface SidebarProps {
   user: User | null;
@@ -29,6 +32,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ user }) => {
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const userMenuRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   const getInitials = (name?: string) => {
     if (!name) return 'DH';
@@ -43,18 +59,20 @@ export const Sidebar: React.FC<SidebarProps> = ({ user }) => {
     try {
       setLoggingOut(true);
       await authService.logout();
-      toast.success("Tizimdan muvaffaqiyatli chiqdingiz");
+      toast.success('Tizimdan muvaffaqiyatli chiqdingiz');
       navigate('/login');
     } catch {
-      toast.error("Chiqishda xatolik yuz berdi");
+      toast.error('Chiqishda xatolik yuz berdi');
     } finally {
       setLoggingOut(false);
       setShowLogoutModal(false);
+      setUserMenuOpen(false);
     }
   };
 
   interface NavItem {
     name: string;
+    shortName: string; // for bottom tab bar (must fit 1 line)
     path: string;
     icon: any;
     enabled: boolean;
@@ -63,40 +81,46 @@ export const Sidebar: React.FC<SidebarProps> = ({ user }) => {
 
   const navItems: NavItem[] = [
     {
-      name: "Guruhlar",
-      path: "/dashboard/groups",
+      name: 'Guruhlar',
+      shortName: 'Guruhlar',
+      path: '/dashboard/groups',
       icon: FolderKanban,
       enabled: true,
     },
     {
       name: "O'quvchilar",
-      path: "/dashboard/students",
+      shortName: "O'quvchi",
+      path: '/dashboard/students',
       icon: Users,
       enabled: true,
     },
     {
-      name: "Davomat",
-      path: "/dashboard/attendance",
+      name: 'Davomat',
+      shortName: 'Davomat',
+      path: '/dashboard/attendance',
       icon: CalendarCheck,
       enabled: true,
     },
     {
       name: "To'lovlar",
-      path: "/dashboard/payments",
+      shortName: "To'lov",
+      path: '/dashboard/payments',
       icon: CreditCard,
       enabled: true,
     },
     {
-      name: "Sozlamalar",
-      path: "/dashboard/settings",
+      name: 'Sozlamalar',
+      shortName: 'Sozlama',
+      path: '/dashboard/settings',
       icon: Settings,
       enabled: true,
     },
     ...(user?.role === 'admin'
       ? [
           {
-            name: "Admin Panel",
-            path: "/admin",
+            name: 'Admin Panel',
+            shortName: 'Admin', // single word — no line-break
+            path: '/admin',
             icon: ShieldCheck,
             enabled: true,
           },
@@ -106,102 +130,181 @@ export const Sidebar: React.FC<SidebarProps> = ({ user }) => {
 
   const isProfileActive = location.pathname === '/dashboard/profile';
 
+  // All nav items + Profile for bottom bar
+  const bottomItems = [
+    ...navItems,
+    {
+      name: 'Profil',
+      shortName: 'Profil',
+      path: '/dashboard/profile',
+      icon: UserIcon,
+      enabled: true,
+    },
+  ];
+
   return (
     <>
-      {/* Mobile Top Header */}
-      <header className="lg:hidden flex items-center justify-between px-4 py-3 bg-white border-b border-stone-200 sticky top-0 z-30 shadow-2xs">
-        <div
-          onClick={() => navigate('/dashboard/groups')}
-          className="flex items-center gap-2.5 cursor-pointer"
-        >
-          <DarsHubLogo className="w-8 h-8 drop-shadow-xs" />
-          <span className="font-bold text-stone-900 tracking-tight text-base">
-            DarsHub
-          </span>
-        </div>
-
-        {/* User Avatar Card on Mobile Header -> Opens Profile */}
-        <div className="flex items-center gap-2">
-          <FeedbackLink variant="mobile" />
-
+      {/* ─── MOBILE TOP HEADER ──────────────────────────────────────────────────── */}
+      <header className="lg:hidden sticky top-0 z-30 bg-white border-b border-stone-200 shadow-sm">
+        <div className="flex items-center justify-between px-4 h-14">
+          {/* Logo */}
           <button
-            onClick={() => navigate('/dashboard/profile')}
-            className={`flex items-center gap-2 px-2 py-1 rounded-xl transition-all ${
-              isProfileActive
-                ? 'bg-[#0F766E]/15 text-[#0F766E] font-bold border border-[#0F766E]/30'
-                : 'hover:bg-stone-100 text-stone-700'
-            }`}
-            title="Profilga o'tish"
+            onClick={() => navigate('/dashboard/groups')}
+            className="flex items-center gap-2 min-w-0 shrink-0"
+            aria-label="Bosh sahifa"
           >
-            <div className="w-7 h-7 rounded-lg bg-[#0F766E] text-white flex items-center justify-center text-[10px] font-bold shadow-xs">
-              {getInitials(user?.fullName)}
-            </div>
-            <span className="text-xs font-semibold max-w-[110px] truncate text-stone-900">
-              {user?.fullName?.split(' ')[0] || 'Profil'}
+            <DarsHubLogo className="w-8 h-8 drop-shadow-xs shrink-0" />
+            <span className="font-bold text-stone-900 tracking-tight text-base leading-none">
+              DarsHub
             </span>
           </button>
 
-          <button
-            onClick={() => setShowLogoutModal(true)}
-            title="Chiqish"
-            className="p-1.5 text-stone-400 hover:text-[#DC2626] hover:bg-red-50 rounded-lg transition-colors"
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
+          {/* Right side actions */}
+          <div className="flex items-center gap-1 shrink-0">
+            {/* Feedback — icon only on mobile */}
+            <a
+              href={FEEDBACK_TELEGRAM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Fikr bildirish"
+              className="flex items-center justify-center w-11 h-11 rounded-xl text-[#0F766E] hover:bg-teal-50 transition-colors"
+            >
+              <MessageSquarePlus className="w-5 h-5" />
+            </a>
+
+            {/* User avatar + dropdown */}
+            <div className="relative" ref={userMenuRef}>
+              <button
+                onClick={() => setUserMenuOpen((v) => !v)}
+                className={`flex items-center gap-1.5 h-11 px-2 rounded-xl transition-all ${
+                  isProfileActive || userMenuOpen
+                    ? 'bg-[#0F766E]/10 text-[#0F766E]'
+                    : 'hover:bg-stone-100 text-stone-700'
+                }`}
+                aria-label="Foydalanuvchi menyu"
+                aria-expanded={userMenuOpen}
+              >
+                <div className="w-8 h-8 rounded-lg bg-[#0F766E] text-white flex items-center justify-center text-[10px] font-bold shadow-xs shrink-0">
+                  {getInitials(user?.fullName)}
+                </div>
+                <ChevronDown
+                  className={`w-3.5 h-3.5 text-stone-400 transition-transform duration-200 ${
+                    userMenuOpen ? 'rotate-180' : ''
+                  }`}
+                />
+              </button>
+
+              {/* Dropdown menu */}
+              {userMenuOpen && (
+                <div className="absolute right-0 top-full mt-1.5 w-52 bg-white rounded-2xl shadow-xl border border-stone-200 py-2 z-50">
+                  {/* User info */}
+                  <div className="px-4 py-2.5 border-b border-stone-100 mb-1">
+                    <p className="text-xs font-semibold text-stone-900 truncate">
+                      {user?.fullName || 'Foydalanuvchi'}
+                    </p>
+                    <p className="text-[11px] text-stone-500 truncate mt-0.5">
+                      {user?.email}
+                    </p>
+                  </div>
+                  {/* Profile link */}
+                  <button
+                    onClick={() => {
+                      navigate('/dashboard/profile');
+                      setUserMenuOpen(false);
+                    }}
+                    className="flex items-center gap-3 w-full px-4 py-2.5 text-xs font-medium text-stone-700 hover:bg-stone-50 transition-colors"
+                  >
+                    <UserIcon className="w-4 h-4 text-stone-400" />
+                    Profilim
+                  </button>
+                  {/* Feedback */}
+                  <a
+                    href={FEEDBACK_TELEGRAM_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setUserMenuOpen(false)}
+                    className="flex items-center gap-3 w-full px-4 py-2.5 text-xs font-medium text-[#0F766E] hover:bg-teal-50 transition-colors"
+                  >
+                    <MessageSquarePlus className="w-4 h-4" />
+                    Fikr bildirish
+                  </a>
+                  {/* Logout */}
+                  <div className="border-t border-stone-100 mt-1 pt-1">
+                    <button
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        setShowLogoutModal(true);
+                      }}
+                      className="flex items-center gap-3 w-full px-4 py-2.5 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      Chiqish
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </header>
 
-      {/* Mobile Bottom Tab Bar */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-stone-200 flex items-center justify-around py-1.5 px-2 shadow-lg">
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          if (!item.enabled) {
+      {/* ─── MOBILE BOTTOM TAB BAR ──────────────────────────────────────────────── */}
+      <nav
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-stone-200 shadow-lg"
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        <div className="flex items-stretch justify-around px-1 h-[56px]">
+          {bottomItems.map((item) => {
+            const Icon = item.icon;
+            if (!item.enabled) {
+              return (
+                <div
+                  key={item.name}
+                  className="flex flex-col items-center justify-center flex-1 py-1 text-stone-300 opacity-60 cursor-not-allowed select-none"
+                >
+                  <Icon className="w-5 h-5 mb-0.5 shrink-0" />
+                  <span className="text-[10px] font-medium leading-tight whitespace-nowrap">
+                    {item.shortName}
+                  </span>
+                </div>
+              );
+            }
+
             return (
-              <div
+              <NavLink
                 key={item.name}
-                className="flex flex-col items-center justify-center py-1 px-2 text-stone-300 opacity-60 cursor-not-allowed select-none"
+                to={item.path}
+                className={({ isActive }) =>
+                  `flex flex-col items-center justify-center flex-1 py-1 rounded-lg transition-colors min-w-0 ${
+                    isActive
+                      ? 'text-[#0F766E]'
+                      : 'text-stone-500 hover:text-stone-800'
+                  }`
+                }
               >
-                <Icon className="w-5 h-5 mb-0.5" />
-                <span className="text-[10px] font-medium">{item.name}</span>
-              </div>
+                {({ isActive }) => (
+                  <>
+                    <Icon
+                      className={`w-5 h-5 mb-0.5 shrink-0 transition-transform ${
+                        isActive ? 'scale-110' : ''
+                      }`}
+                    />
+                    <span
+                      className={`text-[10px] leading-tight whitespace-nowrap ${
+                        isActive ? 'font-bold' : 'font-medium'
+                      }`}
+                    >
+                      {item.shortName}
+                    </span>
+                  </>
+                )}
+              </NavLink>
             );
-          }
-
-          return (
-            <NavLink
-              key={item.name}
-              to={item.path}
-              className={({ isActive }) =>
-                `flex flex-col items-center justify-center py-1 px-3 rounded-lg transition-colors ${
-                  isActive
-                    ? 'text-[#0F766E] font-bold'
-                    : 'text-stone-500 font-medium hover:text-stone-900'
-                }`
-              }
-            >
-              <Icon className="w-5 h-5 mb-0.5" />
-              <span className="text-[10px]">{item.name}</span>
-            </NavLink>
-          );
-        })}
-
-        {/* Profile Mobile Tab */}
-        <NavLink
-          to="/dashboard/profile"
-          className={({ isActive }) =>
-            `flex flex-col items-center justify-center py-1 px-3 rounded-lg transition-colors ${
-              isActive
-                ? 'text-[#0F766E] font-bold'
-                : 'text-stone-500 font-medium hover:text-stone-900'
-            }`
-          }
-        >
-          <UserIcon className="w-5 h-5 mb-0.5" />
-          <span className="text-[10px]">Profil</span>
-        </NavLink>
+          })}
+        </div>
       </nav>
 
-      {/* Desktop Sidebar */}
+      {/* ─── DESKTOP SIDEBAR ────────────────────────────────────────────────────── */}
       <aside className="hidden lg:flex w-60 h-screen sticky top-0 shrink-0 flex-col justify-between p-4 bg-white border-r border-stone-200 text-stone-800">
         <div>
           {/* Brand Header */}
@@ -234,9 +337,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ user }) => {
                       <Icon className="w-4 h-4 opacity-50" />
                       <span>{item.name}</span>
                     </div>
-                    <span className="text-[9px] font-semibold bg-stone-100 text-stone-400 px-1.5 py-0.5 rounded border border-stone-200">
-                      {item.badge}
-                    </span>
+                    {item.badge && (
+                      <span className="text-[9px] font-semibold bg-stone-100 text-stone-400 px-1.5 py-0.5 rounded border border-stone-200">
+                        {item.badge}
+                      </span>
+                    )}
                   </div>
                 );
               }
@@ -282,9 +387,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ user }) => {
                 <p className="text-xs font-semibold text-stone-900 truncate leading-tight group-hover:text-[#0F766E] transition-colors">
                   {user?.fullName || 'Foydalanuvchi'}
                 </p>
-                <p className="text-[10px] text-stone-500 truncate">
-                  {user?.email}
-                </p>
+                <p className="text-[10px] text-stone-500 truncate">{user?.email}</p>
               </div>
             </div>
             <button
@@ -302,7 +405,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ user }) => {
         </div>
       </aside>
 
-      {/* Logout Confirmation Modal */}
+      {/* ─── LOGOUT MODAL ───────────────────────────────────────────────────────── */}
       <Modal
         isOpen={showLogoutModal}
         onClose={() => setShowLogoutModal(false)}
@@ -342,7 +445,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ user }) => {
               Tizimdan chiqishni tasdiqlaysizmi?
             </h4>
             <p className="text-xs text-stone-500 mt-1 leading-relaxed">
-              DarsHub tizimidan chiqmoqchimisiz? Qayta kirish uchun email va parolingizni kiritishingiz kerak bo'ladi.
+              DarsHub tizimidan chiqmoqchimisiz? Qayta kirish uchun email va parolingizni
+              kiritishingiz kerak bo'ladi.
             </p>
           </div>
         </div>

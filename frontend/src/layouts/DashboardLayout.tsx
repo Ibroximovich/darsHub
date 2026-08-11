@@ -53,7 +53,13 @@ export const DashboardLayout: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#FAFAF9] text-[#1C1917] flex flex-col lg:flex-row font-sans tabular-nums antialiased selection:bg-[#0F766E]/15 selection:text-[#0F766E]">
       <Sidebar user={user} />
-      <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full overflow-x-hidden pb-20 lg:pb-8 space-y-6">
+      {/* 
+        pb-[calc(56px+env(safe-area-inset-bottom))] — mobile bottom nav (56px) + iPhone safe area
+        lg:pb-8 — desktop override
+      */}
+      <main
+        className="flex-1 px-4 pt-4 pb-[calc(56px+env(safe-area-inset-bottom,0px))] sm:px-6 sm:pt-5 lg:px-8 lg:pt-8 lg:pb-8 max-w-7xl mx-auto w-full overflow-x-hidden space-y-4 sm:space-y-5 lg:space-y-6"
+      >
         {isSevenDaysOldUser && (
           <FeedbackBanner
             storageKey="feedback_7days_banner_dismissed"
