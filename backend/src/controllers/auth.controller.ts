@@ -201,6 +201,10 @@ export async function getMe(
         phone: true,
         isVerified: true,
         role: true,
+        isAdmin: true,
+        subscriptionStatus: true,
+        trialEndsAt: true,
+        subscriptionExpiresAt: true,
         createdAt: true,
       },
     });
