@@ -203,6 +203,11 @@ export const UserTable: React.FC<UserTableProps> = ({ users }) => {
               const badge = getStatusBadge(user.subscriptionStatus);
               const isUpdatingThisUser = updatingUserId === user.id;
 
+              const displayDate =
+                user.subscriptionStatus === 'active' && user.subscriptionExpiresAt
+                  ? user.subscriptionExpiresAt
+                  : user.trialEndsAt;
+
               return (
                 <tr key={user.id} className="bg-white hover:bg-stone-50/60 transition-colors">
                   {/* Name + email */}
@@ -246,7 +251,7 @@ export const UserTable: React.FC<UserTableProps> = ({ users }) => {
                   <td className="px-4 py-4">
                     <InlineTrialEditor
                       userId={user.id}
-                      currentTrialEndsAt={user.trialEndsAt}
+                      currentTrialEndsAt={displayDate}
                       onSave={handleTrialDateSave}
                       isUpdating={isUpdatingThisUser}
                     />

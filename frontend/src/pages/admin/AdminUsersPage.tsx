@@ -267,7 +267,7 @@ export const AdminUsersPage: React.FC = () => {
                 <th className="py-3.5 px-4">Foydalanuvchi</th>
                 <th className="py-3.5 px-4">Telefon</th>
                 <th className="py-3.5 px-4">Obuna Holati</th>
-                <th className="py-3.5 px-4">Trial Tugash Sanasi</th>
+                <th className="py-3.5 px-4">Tugash Sanasi</th>
                 <th className="py-3.5 px-4 text-center">Guruhlar</th>
                 <th className="py-3.5 px-4 text-center">O'quvchilar</th>
                 <th className="py-3.5 px-4 text-right">Amallar</th>
@@ -294,6 +294,12 @@ export const AdminUsersPage: React.FC = () => {
                   const badge = getStatusBadge(u.subscriptionStatus);
                   const isUpdatingThisUser = updatingUserId === u.id;
                   const isDeactivatingThisUser = deactivatingId === u.id;
+
+                  // Active bo'lsa obuna tugash sanasini, trial bo'lsa trial sanasini ko'rsatamiz
+                  const displayDate =
+                    u.subscriptionStatus === 'active' && u.subscriptionExpiresAt
+                      ? u.subscriptionExpiresAt
+                      : u.trialEndsAt;
 
                   return (
                     <tr key={u.id} className="hover:bg-stone-50/50 transition-colors">
@@ -323,11 +329,11 @@ export const AdminUsersPage: React.FC = () => {
                         </span>
                       </td>
 
-                      {/* Trial Ends At inline editor */}
+                      {/* Expiry Date / Trial Ends At inline editor */}
                       <td className="py-3 px-4">
                         <InlineTrialEditor
                           userId={u.id}
-                          currentTrialEndsAt={u.trialEndsAt}
+                          currentTrialEndsAt={displayDate}
                           onSave={handleTrialDateSave}
                           isUpdating={isUpdatingThisUser}
                         />
