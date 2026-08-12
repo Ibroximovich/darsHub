@@ -295,9 +295,9 @@ export const AdminUsersPage: React.FC = () => {
                   const isUpdatingThisUser = updatingUserId === u.id;
                   const isDeactivatingThisUser = deactivatingId === u.id;
 
-                  // Active bo'lsa obuna tugash sanasini, trial bo'lsa trial sanasini ko'rsatamiz
+                  // Active yoki Expired bo'lsa obuna tugash sanasini, trial bo'lsa trial sanasini ko'rsatamiz
                   const displayDate =
-                    u.subscriptionStatus === 'active' && u.subscriptionExpiresAt
+                    u.subscriptionExpiresAt && (u.subscriptionStatus === 'active' || u.subscriptionStatus === 'expired')
                       ? u.subscriptionExpiresAt
                       : u.trialEndsAt;
 

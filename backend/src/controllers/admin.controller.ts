@@ -510,14 +510,22 @@ export async function deactivateSubscription(
       throw new AppError('Foydalanuvchi topilmadi', 404);
     }
 
+    const now = new Date();
+
     const updated = await prisma.user.update({
       where: { id: userId },
-      data: { subscriptionStatus: 'expired' },
+      data: {
+        subscriptionStatus: 'expired',
+        subscriptionExpiresAt: now,
+        trialEndsAt: now,
+      },
       select: {
         id: true,
         fullName: true,
         email: true,
         subscriptionStatus: true,
+        subscriptionExpiresAt: true,
+        trialEndsAt: true,
       },
     });
 
@@ -533,7 +541,7 @@ export async function deactivateSubscription(
 
 /**
  * PATCH /api/admin/users/:userId/trial
- * Trial sanasini qo'lda tahrirlash
+ * Sanani qo'lda tahrirlash (Sana kelajakka o'zgarsa status avtomatik o'zgaradi)
  * Body: { trialEndsAt: string } // ISO format
  */
 export async function updateUserTrial(
@@ -545,7 +553,6 @@ export async function updateUserTrial(
     const userId = typeof req.params.userId === 'string' ? req.params.userId : String(req.params.userId || '');
     const { trialEndsAt } = req.body;
 
-    // Validatsiya — to'g'ri sana formati
     if (!trialEndsAt || isNaN(Date.parse(trialEndsAt))) {
       throw new AppError('trialEndsAt to\'g\'ri ISO sana formatida bo\'lishi kerak', 400);
     }
@@ -558,33 +565,52 @@ export async function updateUserTrial(
     const newDate = new Date(trialEndsAt);
     const now = new Date();
 
-    // Agar "expired" bo'lsa va sana kelajakda bo'lsa — "trial" ga qaytaramiz
-    const newStatus =
-      user.subscriptionStatus === 'expired' && newDate > now
-        ? 'trial'
-        : user.subscriptionStatus;
+    // Mantiq:
+    // 1. Agar foydalanuvchi "active" bo'lsa -> subscriptionExpiresAt ni yangilaymiz
+    // 2. Agar foydalanuvchi "expired" bo'lsa va yangi sana kelajakda bo'lsa -> statusni "active" ga o'tkazamiz
+    // 3. Agar foydalanuvchi "trial" bo'lsa -> trialEndsAt ni yangilaymiz
+    let dataToUpdate: Prisma.UserUpdateInput = {};
+
+    if (user.subscriptionStatus === 'active') {
+      dataToUpdate = {
+        subscriptionExpiresAt: newDate,
+        subscriptionStatus: newDate > now ? 'active' : 'expired',
+      };
+    } else if (user.subscriptionStatus === 'expired') {
+      dataToUpdate = {
+        subscriptionExpiresAt: newDate,
+        subscriptionStatus: newDate > now ? 'active' : 'expired',
+      };
+    } else {
+      // trial
+      dataToUpdate = {
+        trialEndsAt: newDate,
+        subscriptionStatus: newDate > now ? 'trial' : 'expired',
+      };
+    }
 
     const updated = await prisma.user.update({
       where: { id: userId },
-      data: {
-        trialEndsAt: newDate,
-        subscriptionStatus: newStatus,
-      },
+      data: dataToUpdate,
       select: {
         id: true,
         fullName: true,
         email: true,
         subscriptionStatus: true,
+        subscriptionExpiresAt: true,
         trialEndsAt: true,
       },
     });
 
     res.status(200).json({
       success: true,
-      message: 'Trial sanasi muvaffaqiyatli yangilandi',
+      message: 'Sana muvaffaqiyatli yangilandi',
       data: updated,
     });
   } catch (error) {
+    next(error);
+  }
+}
     next(error);
   }
 }

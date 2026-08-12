@@ -204,7 +204,7 @@ export const UserTable: React.FC<UserTableProps> = ({ users }) => {
               const isUpdatingThisUser = updatingUserId === user.id;
 
               const displayDate =
-                user.subscriptionStatus === 'active' && user.subscriptionExpiresAt
+                user.subscriptionExpiresAt && (user.subscriptionStatus === 'active' || user.subscriptionStatus === 'expired')
                   ? user.subscriptionExpiresAt
                   : user.trialEndsAt;
 
