@@ -48,9 +48,9 @@ export async function runLessonReminderJob(): Promise<void> {
           // Dars boshlanishigacha qolgan vaqt (daqiqa)
           const minutesUntilLesson = (lessonTime.getTime() - now.getTime()) / (1000 * 60);
 
-          // 28-32 daqiqa oralig'ida bo'lsa eslatma yuboramiz
-          // (Cron 5 daqiqada ishlaydi, ±2 daqiqa oyna — aniq 30 daqiqani tutib olish uchun)
-          if (minutesUntilLesson < 28 || minutesUntilLesson > 32) continue;
+          // 15-35 daqiqa oralig'ida bo'lsa va hali yuborilmagan bo'lsa eslatma yuboramiz
+          // (NotificationLog allaqachon yuborilganini tekshirgani uchun 1 martadan ortiq yuborilmaydi)
+          if (minutesUntilLesson < 15 || minutesUntilLesson > 35) continue;
 
           const refId = `${group.id}-${todayDateStr}`;
 
