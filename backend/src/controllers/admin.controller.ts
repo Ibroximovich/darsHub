@@ -565,29 +565,14 @@ export async function updateUserTrial(
     const newDate = new Date(trialEndsAt);
     const now = new Date();
 
-    // Mantiq:
-    // 1. Agar foydalanuvchi "active" bo'lsa -> subscriptionExpiresAt ni yangilaymiz
-    // 2. Agar foydalanuvchi "expired" bo'lsa va yangi sana kelajakda bo'lsa -> statusni "active" ga o'tkazamiz
-    // 3. Agar foydalanuvchi "trial" bo'lsa -> trialEndsAt ni yangilaymiz
-    let dataToUpdate: Prisma.UserUpdateInput = {};
-
-    if (user.subscriptionStatus === 'active') {
-      dataToUpdate = {
-        subscriptionExpiresAt: newDate,
-        subscriptionStatus: newDate > now ? 'active' : 'expired',
-      };
-    } else if (user.subscriptionStatus === 'expired') {
-      dataToUpdate = {
-        subscriptionExpiresAt: newDate,
-        subscriptionStatus: newDate > now ? 'active' : 'expired',
-      };
-    } else {
-      // trial
-      dataToUpdate = {
-        trialEndsAt: newDate,
-        subscriptionStatus: newDate > now ? 'trial' : 'expired',
-      };
-    }
+    // Mantiq: Sanani kelajakka sursak — status avtomatik "active" (Faol) bo'ladi
+    // Sanani o'tgan kunga sursak — status "expired" (Tugagan) bo'ladi
+    const isFuture = newDate > now;
+    const dataToUpdate: Prisma.UserUpdateInput = {
+      subscriptionStatus: isFuture ? 'active' : 'expired',
+      subscriptionExpiresAt: isFuture ? newDate : now,
+      trialEndsAt: newDate,
+    };
 
     const updated = await prisma.user.update({
       where: { id: userId },
