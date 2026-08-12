@@ -110,9 +110,27 @@ export async function getAdminUsers(
       },
     });
 
+    const now = new Date();
+    const formattedUsers = users.map((u) => {
+      let computedStatus = u.subscriptionStatus;
+      if (u.subscriptionStatus === 'trial' && u.trialEndsAt && u.trialEndsAt <= now) {
+        computedStatus = 'expired';
+      } else if (
+        u.subscriptionStatus === 'active' &&
+        u.subscriptionExpiresAt &&
+        u.subscriptionExpiresAt <= now
+      ) {
+        computedStatus = 'expired';
+      }
+      return {
+        ...u,
+        subscriptionStatus: computedStatus,
+      };
+    });
+
     res.status(200).json({
       success: true,
-      data: users,
+      data: formattedUsers,
       pagination: {
         total,
         page,

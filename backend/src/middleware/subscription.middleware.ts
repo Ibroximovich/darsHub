@@ -57,8 +57,8 @@ export async function requireSubscription(
       return next();
     }
 
-    // ── 3. Muddati o'tgan "active" → DB da "expired" ga yangilash ─────────
-    if (dbUser.subscriptionStatus === 'active') {
+    // ── 3. Muddati o'tgan statusni DB da "expired" ga yangilash ─────────
+    if (dbUser.subscriptionStatus === 'active' || dbUser.subscriptionStatus === 'trial') {
       await prisma.user.update({
         where: { id: req.user.id },
         data: { subscriptionStatus: 'expired' },
