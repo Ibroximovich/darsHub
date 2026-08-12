@@ -69,8 +69,8 @@ export async function registerUser(data: RegisterInput) {
 
   let user;
 
-  // Trial 7 kun — ro'yxatdan o'tgan vaqtdan boshlab hisoblanadi
-  const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+  // Trial 15 kun — ro'yxatdan o'tgan vaqtdan boshlab hisoblanadi
+  const trialEndsAt = new Date(Date.now() + 15 * 24 * 60 * 60 * 1000);
 
   if (existingUnverifiedUser) {
     user = await prisma.user.update({
