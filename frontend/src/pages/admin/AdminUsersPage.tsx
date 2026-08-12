@@ -98,6 +98,19 @@ const InlineTrialEditor: React.FC<InlineTrialEditorProps> = ({
   isUpdating,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [dateVal, setDateVal] = useState(toInputDateValue(currentTrialEndsAt));
+
+  useEffect(() => {
+    setDateVal(toInputDateValue(currentTrialEndsAt));
+  }, [currentTrialEndsAt]);
+
+  const handleConfirm = () => {
+    if (dateVal && dateVal !== toInputDateValue(currentTrialEndsAt)) {
+      const iso = new Date(`${dateVal}T00:00:00.000Z`).toISOString();
+      onSave(userId, iso);
+    }
+    setIsEditing(false);
+  };
 
   if (isUpdating) {
     return (
@@ -110,29 +123,47 @@ const InlineTrialEditor: React.FC<InlineTrialEditorProps> = ({
 
   if (isEditing) {
     return (
-      <input
-        type="date"
-        defaultValue={toInputDateValue(currentTrialEndsAt)}
-        autoFocus
-        onChange={(e) => {
-          if (e.target.value) {
-            const iso = new Date(`${e.target.value}T00:00:00.000Z`).toISOString();
-            onSave(userId, iso);
-            setIsEditing(false);
-          }
-        }}
-        onBlur={() => setIsEditing(false)}
-        className="px-2 py-1 text-xs border border-teal-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/30 bg-white text-stone-900 shadow-xs"
-      />
+      <div className="flex items-center gap-1">
+        <input
+          type="date"
+          value={dateVal}
+          onChange={(e) => setDateVal(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleConfirm();
+            if (e.key === 'Escape') setIsEditing(false);
+          }}
+          autoFocus
+          className="px-2 py-1 text-xs border border-teal-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-teal-500/30 bg-white text-stone-900 shadow-xs"
+        />
+        <button
+          type="button"
+          onClick={handleConfirm}
+          className="p-1 rounded-lg bg-teal-600 text-white hover:bg-teal-700 transition-colors"
+          title="Saqlash (Enter)"
+        >
+          <CheckCircle className="w-3.5 h-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => setIsEditing(false)}
+          className="p-1 rounded-lg bg-stone-100 text-stone-500 hover:bg-stone-200 transition-colors"
+          title="Bekor qilish (Esc)"
+        >
+          <XCircle className="w-3.5 h-3.5" />
+        </button>
+      </div>
     );
   }
 
   return (
     <button
-      onClick={() => setIsEditing(true)}
+      onClick={() => {
+        setDateVal(toInputDateValue(currentTrialEndsAt));
+        setIsEditing(true);
+      }}
       type="button"
       className="group flex items-center gap-1.5 hover:bg-stone-100 px-2 py-1 rounded-lg transition-colors text-left"
-      title="Trial sanasini tahrirlash uchun bosing"
+      title="Sanasini tahrirlash uchun bosing"
     >
       <span className="text-xs font-medium text-stone-700">
         {formatTrialDate(currentTrialEndsAt)}
