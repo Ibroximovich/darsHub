@@ -352,14 +352,14 @@ export const AdminUsersPage: React.FC = () => {
                       {/* Actions */}
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1.5">
-                          {/* Activate Button */}
+                          {/* Activate / Extend Button */}
                           <button
                             onClick={() => setActivateTarget(u)}
                             className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-teal-50 text-teal-700 border border-teal-200 hover:bg-teal-100 transition-colors"
-                            title="Obunani faollashtirish"
+                            title={u.subscriptionStatus === 'active' ? "Obunani uzaytirish" : "Obunani faollashtirish"}
                           >
                             <UserCheck className="w-3.5 h-3.5" />
-                            <span>Faollashtirish</span>
+                            <span>{u.subscriptionStatus === 'active' ? 'Uzaytirish' : 'Faollashtirish'}</span>
                           </button>
 
                           {/* Deactivate Button */}
