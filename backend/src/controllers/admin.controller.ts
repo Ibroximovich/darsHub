@@ -96,6 +96,10 @@ export async function getAdminUsers(
         phone: true,
         role: true,
         isVerified: true,
+        subscriptionStatus: true,
+        trialEndsAt: true,
+        subscriptionExpiresAt: true,
+        isAdmin: true,
         createdAt: true,
         _count: {
           select: {
