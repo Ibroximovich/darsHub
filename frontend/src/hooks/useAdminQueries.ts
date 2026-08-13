@@ -15,6 +15,7 @@ export function useAdminUsers(page: number, search: string) {
       }
       return response;
     },
+    staleTime: 10 * 60 * 1000, // 10 daqiqa — tez-tez o'zgarmaydi
   });
 }
 
@@ -99,6 +100,7 @@ export function useAdminStudents(page: number, search: string) {
       }
       return response;
     },
+    staleTime: 10 * 60 * 1000, // 10 daqiqa — tez-tez o'zgarmaydi
   });
 }
 
@@ -135,6 +137,7 @@ export function useAdminGroups(page: number, search: string) {
       }
       return response;
     },
+    staleTime: 30 * 60 * 1000, // 30 daqiqa — kamdan-kam o'zgaradi
   });
 }
 
@@ -171,6 +174,7 @@ export function useAdminStats() {
       }
       return response.data;
     },
+    staleTime: 10 * 60 * 1000, // 10 daqiqa — o'rtacha yangilanadi
   });
 }
 
@@ -191,5 +195,6 @@ export function useAdminPayments(page: number, search: string, status: string) {
       }
       return response;
     },
+    staleTime: 5 * 60 * 1000, // 5 daqiqa — to'lovlar tez-tez yangilanadi
   });
 }
