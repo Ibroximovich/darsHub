@@ -24,7 +24,7 @@ export const ActivateSubscriptionModal: React.FC<ActivateSubscriptionModalProps>
     mutationFn: () => adminSubscriptionApi.activateUser(userId, selectedMonths),
     onSuccess: () => {
       toast.success(`${userName} uchun ${selectedMonths} oylik obuna faollashtirildi`);
-      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+      queryClient.invalidateQueries({ queryKey: ['admin'] });
       onClose();
     },
     onError: () => {

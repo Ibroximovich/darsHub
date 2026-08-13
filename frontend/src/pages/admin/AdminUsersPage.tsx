@@ -1,7 +1,11 @@
-import React, { useEffect, useState } from 'react';
-import { adminService } from '../../services/admin.service';
-import { adminSubscriptionApi } from '../../api/admin';
+import React, { useState, useEffect } from 'react';
 import type { AdminUser, Pagination } from '../../types/admin.types';
+import {
+  useAdminUsers,
+  useDeleteAdminUser,
+  useDeactivateUserSubscription,
+  useUpdateUserTrialDate,
+} from '../../hooks/useAdminQueries';
 import {
   Search,
   Trash2,
@@ -20,7 +24,6 @@ import {
 } from 'lucide-react';
 import { Modal } from '../../components/ui/Modal';
 import { ActivateSubscriptionModal } from '../../components/admin/ActivateSubscriptionModal';
-import toast from 'react-hot-toast';
 
 type StatusBadge = {
   label: string;
@@ -174,93 +177,52 @@ const InlineTrialEditor: React.FC<InlineTrialEditorProps> = ({
 };
 
 export const AdminUsersPage: React.FC = () => {
-  const [users, setUsers] = useState<AdminUser[]>([]);
-  const [pagination, setPagination] = useState<Pagination>({
+  const [page, setPage] = useState<number>(1);
+  const [search, setSearch] = useState<string>('');
+
+  // React Query Hooks
+  const { data: usersResponse, isLoading } = useAdminUsers(page, search);
+  const deleteUserMutation = useDeleteAdminUser();
+  const deactivateMutation = useDeactivateUserSubscription();
+  const updateTrialMutation = useUpdateUserTrialDate();
+
+  const users = usersResponse?.data || [];
+  const pagination: Pagination = usersResponse?.pagination || {
     total: 0,
     page: 1,
     limit: 10,
     totalPages: 1,
-  });
-  const [search, setSearch] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(true);
+  };
 
   // Modals state
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [showViewModal, setShowViewModal] = useState<boolean>(false);
   const [deleteTargetUser, setDeleteTargetUser] = useState<AdminUser | null>(null);
-  const [deleting, setDeleting] = useState<boolean>(false);
 
   // Subscription management state
   const [activateTarget, setActivateTarget] = useState<AdminUser | null>(null);
-  const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
-  const [deactivatingId, setDeactivatingId] = useState<string | null>(null);
-
-  const fetchUsers = async (page = pagination.page, searchQuery = search) => {
-    try {
-      setLoading(true);
-      const response = await adminService.getUsers(page, 10, searchQuery);
-      if (response.success) {
-        setUsers(response.data);
-        setPagination(response.pagination);
-      }
-    } catch {
-      toast.error('Foydalanuvchilarni yuklashda xatolik');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchUsers(1, search);
-  }, [search]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
-      fetchUsers(newPage, search);
+      setPage(newPage);
     }
   };
 
-  const handleDeleteUser = async () => {
+  const handleDeleteUser = () => {
     if (!deleteTargetUser) return;
-    try {
-      setDeleting(true);
-      const res = await adminService.deleteUser(deleteTargetUser.id);
-      if (res.success) {
-        toast.success(res.message || "Foydalanuvchi o'chirildi");
+    deleteUserMutation.mutate(deleteTargetUser.id, {
+      onSuccess: () => {
         setDeleteTargetUser(null);
-        fetchUsers(pagination.page, search);
-      }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "O'chirishda xatolik yuz berdi");
-    } finally {
-      setDeleting(false);
-    }
+      },
+    });
   };
 
-  const handleTrialDateSave = async (userId: string, newIsoDate: string) => {
-    try {
-      setUpdatingUserId(userId);
-      await adminSubscriptionApi.updateUserTrial(userId, newIsoDate);
-      toast.success('Trial sanasi yangilandi');
-      fetchUsers(pagination.page, search);
-    } catch {
-      toast.error('Trial sanasini yangilashda xatolik yuz berdi');
-    } finally {
-      setUpdatingUserId(null);
-    }
+  const handleTrialDateSave = (userId: string, newIsoDate: string) => {
+    updateTrialMutation.mutate({ userId, trialEndsAt: newIsoDate });
   };
 
-  const handleDeactivate = async (userId: string) => {
-    try {
-      setDeactivatingId(userId);
-      await adminSubscriptionApi.deactivateUser(userId);
-      toast.success('Obuna bekor qilindi');
-      fetchUsers(pagination.page, search);
-    } catch {
-      toast.error('Obunani bekor qilishda xatolik');
-    } finally {
-      setDeactivatingId(null);
-    }
+  const handleDeactivate = (userId: string) => {
+    deactivateMutation.mutate(userId);
   };
 
   return (
@@ -305,7 +267,7 @@ export const AdminUsersPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100 text-xs text-stone-700">
-              {loading ? (
+              {isLoading ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-stone-400">
                     <div className="flex items-center justify-center gap-2">
@@ -323,8 +285,11 @@ export const AdminUsersPage: React.FC = () => {
               ) : (
                 users.map((u) => {
                   const badge = getStatusBadge(u.subscriptionStatus);
-                  const isUpdatingThisUser = updatingUserId === u.id;
-                  const isDeactivatingThisUser = deactivatingId === u.id;
+                  const isUpdatingThisUser =
+                    updateTrialMutation.isPending &&
+                    updateTrialMutation.variables?.userId === u.id;
+                  const isDeactivatingThisUser =
+                    deactivateMutation.isPending && deactivateMutation.variables === u.id;
 
                   // Active yoki Expired bo'lsa obuna tugash sanasini, trial bo'lsa trial sanasini ko'rsatamiz
                   const displayDate =
@@ -371,13 +336,13 @@ export const AdminUsersPage: React.FC = () => {
                       </td>
 
                       {/* Groups count */}
-                      <td className="py-3 px-4 text-center font-bold text-stone-900">
-                        {u._count?.groups || 0}
+                      <td className="py-3 px-4 text-center font-semibold text-stone-800">
+                        {u._count?.groups ?? 0}
                       </td>
 
                       {/* Students count */}
-                      <td className="py-3 px-4 text-center font-bold text-stone-900">
-                        {u._count?.students || 0}
+                      <td className="py-3 px-4 text-center font-semibold text-stone-800">
+                        {u._count?.students ?? 0}
                       </td>
 
                       {/* Actions */}
@@ -398,7 +363,7 @@ export const AdminUsersPage: React.FC = () => {
                             <button
                               onClick={() => handleDeactivate(u.id)}
                               disabled={isDeactivatingThisUser}
-                              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 transition-colors disabled:opacity-50"
+                              className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 disabled:opacity-50 transition-colors"
                               title="Obunani bekor qilish"
                             >
                               {isDeactivatingThisUser ? (
@@ -478,10 +443,7 @@ export const AdminUsersPage: React.FC = () => {
         <ActivateSubscriptionModal
           userId={activateTarget.id}
           userName={activateTarget.fullName}
-          onClose={() => {
-            setActivateTarget(null);
-            fetchUsers(pagination.page, search);
-          }}
+          onClose={() => setActivateTarget(null)}
         />
       )}
 
@@ -549,10 +511,10 @@ export const AdminUsersPage: React.FC = () => {
             </button>
             <button
               onClick={handleDeleteUser}
-              disabled={deleting}
+              disabled={deleteUserMutation.isPending}
               className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors disabled:opacity-50"
             >
-              {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+              {deleteUserMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
               <span>Rostdan ham o'chirish</span>
             </button>
           </>

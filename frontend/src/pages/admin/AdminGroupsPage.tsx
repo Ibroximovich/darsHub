@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { adminService } from '../../services/admin.service';
+import React, { useState } from 'react';
 import type { AdminGroup, Pagination } from '../../types/admin.types';
+import { useAdminGroups, useDeleteAdminGroup } from '../../hooks/useAdminQueries';
 import {
   Search,
   Trash2,
@@ -13,65 +13,40 @@ import {
   Clock,
 } from 'lucide-react';
 import { Modal } from '../../components/ui/Modal';
-import toast from 'react-hot-toast';
 
 export const AdminGroupsPage: React.FC = () => {
-  const [groups, setGroups] = useState<AdminGroup[]>([]);
-  const [pagination, setPagination] = useState<Pagination>({
+  const [page, setPage] = useState<number>(1);
+  const [search, setSearch] = useState<string>('');
+
+  const { data: response, isLoading } = useAdminGroups(page, search);
+  const deleteGroupMutation = useDeleteAdminGroup();
+
+  const groups = response?.data || [];
+  const pagination: Pagination = response?.pagination || {
     total: 0,
     page: 1,
     limit: 10,
     totalPages: 1,
-  });
-  const [search, setSearch] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(true);
+  };
 
   // Modals state
   const [selectedGroup, setSelectedGroup] = useState<AdminGroup | null>(null);
   const [showViewModal, setShowViewModal] = useState<boolean>(false);
   const [deleteTargetGroup, setDeleteTargetGroup] = useState<AdminGroup | null>(null);
-  const [deleting, setDeleting] = useState<boolean>(false);
-
-  const fetchGroups = async (page = pagination.page, searchQuery = search) => {
-    try {
-      setLoading(true);
-      const response = await adminService.getGroups(page, 10, searchQuery);
-      if (response.success) {
-        setGroups(response.data);
-        setPagination(response.pagination);
-      }
-    } catch {
-      toast.error("Guruhlarni yuklashda xatolik");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchGroups(1, search);
-  }, [search]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
-      fetchGroups(newPage, search);
+      setPage(newPage);
     }
   };
 
-  const handleDeleteGroup = async () => {
+  const handleDeleteGroup = () => {
     if (!deleteTargetGroup) return;
-    try {
-      setDeleting(true);
-      const res = await adminService.deleteGroup(deleteTargetGroup.id);
-      if (res.success) {
-        toast.success(res.message || "Guruh o'chirildi");
+    deleteGroupMutation.mutate(deleteTargetGroup.id, {
+      onSuccess: () => {
         setDeleteTargetGroup(null);
-        fetchGroups(pagination.page, search);
-      }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "O'chirishda xatolik yuz berdi");
-    } finally {
-      setDeleting(false);
-    }
+      },
+    });
   };
 
   const formatMoney = (amount: number) => {
@@ -119,7 +94,7 @@ export const AdminGroupsPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100 text-xs text-stone-700">
-              {loading ? (
+              {isLoading ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-stone-400">
                     <div className="flex items-center justify-center gap-2">
@@ -293,10 +268,10 @@ export const AdminGroupsPage: React.FC = () => {
             </button>
             <button
               onClick={handleDeleteGroup}
-              disabled={deleting}
+              disabled={deleteGroupMutation.isPending}
               className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors disabled:opacity-50"
             >
-              {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
+              {deleteGroupMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
               <span>Rostdan ham o'chirish</span>
             </button>
           </>
