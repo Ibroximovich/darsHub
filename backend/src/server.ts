@@ -51,11 +51,16 @@ app.get('/', (_req, res) => {
     success: true,
     message: '📚 DarsHub API Server ishlayapti!',
     swaggerDocs: '/api-docs',
-    healthCheck: '/api/health',
+    healthCheck: '/health',
   });
 });
 
-// Health check
+// Plain /health endpoint for uptime monitors (UptimeRobot, Render, etc.)
+app.get('/health', (_req, res) => {
+  res.status(200).send('OK');
+});
+
+// Health check JSON endpoint
 app.get('/api/health', (_req, res) => {
   res.json({
     success: true,
