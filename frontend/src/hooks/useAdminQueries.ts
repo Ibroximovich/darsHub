@@ -137,7 +137,7 @@ export function useAdminGroups(page: number, search: string) {
       }
       return response;
     },
-    staleTime: 30 * 60 * 1000, // 30 daqiqa — kamdan-kam o'zgaradi
+    staleTime: 10 * 60 * 1000, // 10 daqiqa — repetitorlar guruh yaratishi mumkin
   });
 }
 
