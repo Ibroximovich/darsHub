@@ -614,6 +614,4 @@ export async function updateUserTrial(
     next(error);
   }
 }
-    next(error);
-  }
-}
+
