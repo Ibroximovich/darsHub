@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { adminService } from '../../services/admin.service';
-import type { AdminStats } from '../../types/admin.types';
+import React from 'react';
+import { useAdminStats } from '../../hooks/useAdminQueries';
 import {
   Users,
   FolderKanban,
@@ -9,42 +8,38 @@ import {
   TrendingUp,
   Loader2,
   RefreshCw,
+  AlertCircle,
 } from 'lucide-react';
-import toast from 'react-hot-toast';
 
 export const AdminStatsPage: React.FC = () => {
-  const [stats, setStats] = useState<AdminStats | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
-
-  const fetchStats = async () => {
-    try {
-      setLoading(true);
-      const response = await adminService.getStats();
-      if (response.success && response.data) {
-        setStats(response.data);
-      }
-    } catch {
-      toast.error("Statistika ma'lumotlarini yuklashda xatolik");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchStats();
-  }, []);
+  const { data: stats, isLoading, isError, refetch, isFetching } = useAdminStats();
 
   const formatMoney = (amount: number) => {
     return new Intl.NumberFormat('uz-UZ').format(amount) + " so'm";
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="flex items-center gap-2.5 text-[#0F766E] font-semibold text-xs">
           <Loader2 className="w-5 h-5 animate-spin" />
           <span>Statistika yuklanmoqda...</span>
         </div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-3 text-red-600">
+        <AlertCircle className="w-8 h-8" />
+        <p className="text-sm font-semibold">Statistikani yuklashda xatolik yuz berdi</p>
+        <button
+          onClick={() => refetch()}
+          className="px-4 py-2 bg-red-600 text-white rounded-xl text-xs font-semibold hover:bg-red-700 transition-colors"
+        >
+          Qayta urinish
+        </button>
       </div>
     );
   }
@@ -98,11 +93,11 @@ export const AdminStatsPage: React.FC = () => {
         </div>
 
         <button
-          onClick={fetchStats}
-          disabled={loading}
+          onClick={() => refetch()}
+          disabled={isFetching}
           className="flex items-center gap-2 px-3.5 py-2 text-xs font-semibold text-stone-700 bg-white border border-stone-200 rounded-xl hover:bg-stone-50 transition-colors shadow-2xs self-start sm:self-auto"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`w-3.5 h-3.5 ${isFetching ? 'animate-spin' : ''}`} />
           <span>Yangilash</span>
         </button>
       </div>

@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from 'react';
-import { adminService } from '../../services/admin.service';
-import type { AdminPayment, Pagination } from '../../types/admin.types';
+import React, { useState } from 'react';
+import type { Pagination } from '../../types/admin.types';
+import { useAdminPayments } from '../../hooks/useAdminQueries';
 import {
   Search,
   Loader2,
@@ -8,48 +8,38 @@ import {
   ChevronRight,
   CheckCircle2,
   XCircle,
+  AlertCircle,
 } from 'lucide-react';
-import toast from 'react-hot-toast';
 
 export const AdminPaymentsPage: React.FC = () => {
-  const [payments, setPayments] = useState<AdminPayment[]>([]);
-  const [pagination, setPagination] = useState<Pagination>({
+  const [page, setPage] = useState<number>(1);
+  const [search, setSearch] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+
+  const { data, isLoading, isError, refetch } = useAdminPayments(page, search, statusFilter);
+
+  const payments = data?.data ?? [];
+  const pagination: Pagination = data?.pagination ?? {
     total: 0,
     page: 1,
     limit: 10,
     totalPages: 1,
-  });
-  const [search, setSearch] = useState<string>('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [loading, setLoading] = useState<boolean>(true);
-
-  const fetchPayments = async (
-    page = pagination.page,
-    searchQuery = search,
-    status = statusFilter
-  ) => {
-    try {
-      setLoading(true);
-      const response = await adminService.getPayments(page, 10, searchQuery, status === 'all' ? '' : status);
-      if (response.success) {
-        setPayments(response.data);
-        setPagination(response.pagination);
-      }
-    } catch {
-      toast.error("To'lovlarni yuklashda xatolik");
-    } finally {
-      setLoading(false);
-    }
   };
-
-  useEffect(() => {
-    fetchPayments(1, search, statusFilter);
-  }, [search, statusFilter]);
 
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= pagination.totalPages) {
-      fetchPayments(newPage, search, statusFilter);
+      setPage(newPage);
     }
+  };
+
+  const handleSearch = (val: string) => {
+    setSearch(val);
+    setPage(1);
+  };
+
+  const handleStatusFilter = (val: string) => {
+    setStatusFilter(val);
+    setPage(1);
   };
 
   const formatMoney = (amount: number) => {
@@ -73,7 +63,7 @@ export const AdminPaymentsPage: React.FC = () => {
           {/* Status Tabs */}
           <div className="flex bg-stone-200/70 p-1 rounded-xl text-xs font-semibold text-stone-600">
             <button
-              onClick={() => setStatusFilter('all')}
+              onClick={() => handleStatusFilter('all')}
               className={`px-3 py-1.5 rounded-lg transition-all ${
                 statusFilter === 'all'
                   ? 'bg-white text-stone-900 shadow-2xs'
@@ -83,7 +73,7 @@ export const AdminPaymentsPage: React.FC = () => {
               Barchasi
             </button>
             <button
-              onClick={() => setStatusFilter('paid')}
+              onClick={() => handleStatusFilter('paid')}
               className={`px-3 py-1.5 rounded-lg transition-all ${
                 statusFilter === 'paid'
                   ? 'bg-white text-emerald-700 shadow-2xs font-bold'
@@ -93,7 +83,7 @@ export const AdminPaymentsPage: React.FC = () => {
               To'langan
             </button>
             <button
-              onClick={() => setStatusFilter('unpaid')}
+              onClick={() => handleStatusFilter('unpaid')}
               className={`px-3 py-1.5 rounded-lg transition-all ${
                 statusFilter === 'unpaid'
                   ? 'bg-white text-amber-700 shadow-2xs font-bold'
@@ -110,7 +100,7 @@ export const AdminPaymentsPage: React.FC = () => {
             <input
               type="text"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => handleSearch(e.target.value)}
               placeholder="O'quvchi, guruh yoki davr..."
               className="w-full pl-9 pr-3 py-2 bg-white border border-stone-200 rounded-xl text-xs text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] transition-all shadow-2xs"
             />
@@ -134,12 +124,27 @@ export const AdminPaymentsPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-stone-100 text-xs text-stone-700">
-              {loading ? (
+              {isLoading ? (
                 <tr>
                   <td colSpan={7} className="py-12 text-center text-stone-400">
                     <div className="flex items-center justify-center gap-2">
                       <Loader2 className="w-5 h-5 animate-spin text-[#0F766E]" />
                       <span>Yuklanmoqda...</span>
+                    </div>
+                  </td>
+                </tr>
+              ) : isError ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center">
+                    <div className="flex flex-col items-center gap-2 text-red-500">
+                      <AlertCircle className="w-6 h-6" />
+                      <span className="text-xs font-semibold">Yuklashda xatolik</span>
+                      <button
+                        onClick={() => refetch()}
+                        className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs font-semibold hover:bg-red-700"
+                      >
+                        Qayta urinish
+                      </button>
                     </div>
                   </td>
                 </tr>
@@ -159,7 +164,7 @@ export const AdminPaymentsPage: React.FC = () => {
                     <tr key={p.id} className="hover:bg-stone-50/50 transition-colors">
                       <td className="py-3 px-4">
                         <div className="font-semibold text-stone-900">
-                          {student ? `${student.firstName} ${student.lastName}` : 'Noma\'lum o\'quvchi'}
+                          {student ? `${student.firstName} ${student.lastName}` : "Noma'lum o'quvchi"}
                         </div>
                         <div className="text-[11px] text-stone-500 font-mono">
                           {student?.phone}

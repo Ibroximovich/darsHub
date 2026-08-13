@@ -173,3 +173,23 @@ export function useAdminStats() {
     },
   });
 }
+
+// ─── ADMIN PAYMENTS HOOK ─────────────────────────────────────────────────────
+
+export function useAdminPayments(page: number, search: string, status: string) {
+  return useQuery({
+    queryKey: ['admin', 'payments', page, search, status],
+    queryFn: async () => {
+      const response = await adminService.getPayments(
+        page,
+        10,
+        search,
+        status === 'all' ? '' : status
+      );
+      if (!response.success) {
+        throw new Error("To'lovlarni yuklashda xatolik");
+      }
+      return response;
+    },
+  });
+}
