@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Modal } from '../ui/Modal';
 import { studentsApi } from '../../api/students';
+import { groupsApi } from '../../api/groups';
 import type { Student } from '../../types/students.types';
 import { applyPhoneMask, cleanPhoneNumber, formatPhoneDisplay } from '../../utils/phone.utils';
 import toast from 'react-hot-toast';
@@ -10,17 +11,27 @@ import { Search, UserPlus, ArrowLeft, Loader2, UserCheck } from 'lucide-react';
 interface AddStudentModalProps {
   isOpen: boolean;
   onClose: () => void;
-  groupId: string;
+  groupId?: string;
 }
 
 export const AddStudentModal: React.FC<AddStudentModalProps> = ({
   isOpen,
   onClose,
-  groupId,
+  groupId: propsGroupId,
 }) => {
   const queryClient = useQueryClient();
 
   const [step, setStep] = useState<1 | 2>(1);
+  const [selectedGroupId, setSelectedGroupId] = useState<string>(propsGroupId || '');
+
+  // Fetch groups if groupId is not provided as prop
+  const { data: groups = [] } = useQuery({
+    queryKey: ['groups'],
+    queryFn: groupsApi.getGroups,
+    enabled: isOpen && !propsGroupId,
+  });
+
+  const targetGroupId = propsGroupId || selectedGroupId;
 
   // Step 1 state
   const [searchPhone, setSearchPhone] = useState('+998 ');
@@ -47,13 +58,26 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
       setParentName('');
       setParentPhone('+998 ');
       setFormError('');
+
+      if (propsGroupId) {
+        setSelectedGroupId(propsGroupId);
+      } else if (groups.length > 0) {
+        setSelectedGroupId(groups[0].id);
+      } else {
+        setSelectedGroupId('');
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, propsGroupId, groups]);
 
   // Handle Search in Step 1
   const handleSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setFormError('');
+
+    if (!targetGroupId) {
+      setFormError("Iltimos, guruhni tanlang");
+      return;
+    }
 
     const cleaned = cleanPhoneNumber(searchPhone);
     if (cleaned.length < 13) {
@@ -65,7 +89,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
       setIsSearching(true);
       const results = await studentsApi.searchStudents(cleaned);
       setSearchResults(results);
-    } catch (err: any) {
+    } catch {
       toast.error("Qidiruvda xatolik yuz berdi");
     } finally {
       setIsSearching(false);
@@ -74,11 +98,18 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
 
   // Add existing student mutation
   const addExistingMutation = useMutation({
-    mutationFn: (studentId: string) =>
-      studentsApi.addStudentToGroup(groupId, { studentId }),
+    mutationFn: (studentId: string) => {
+      if (!targetGroupId) {
+        throw new Error("Iltimos, guruhni tanlang");
+      }
+      return studentsApi.addStudentToGroup(targetGroupId, { studentId });
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['groupStudents', groupId] });
+      if (targetGroupId) {
+        queryClient.invalidateQueries({ queryKey: ['groupStudents', targetGroupId] });
+      }
       queryClient.invalidateQueries({ queryKey: ['groups'] });
+      queryClient.invalidateQueries({ queryKey: ['students-all'] });
       toast.success("O'quvchi guruhga qo'shildi");
       onClose();
     },
@@ -91,10 +122,18 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
 
   // Add new student mutation
   const addNewMutation = useMutation({
-    mutationFn: (data: any) => studentsApi.addStudentToGroup(groupId, data),
+    mutationFn: (data: any) => {
+      if (!targetGroupId) {
+        throw new Error("Iltimos, guruhni tanlang");
+      }
+      return studentsApi.addStudentToGroup(targetGroupId, data);
+    },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['groupStudents', groupId] });
+      if (targetGroupId) {
+        queryClient.invalidateQueries({ queryKey: ['groupStudents', targetGroupId] });
+      }
       queryClient.invalidateQueries({ queryKey: ['groups'] });
+      queryClient.invalidateQueries({ queryKey: ['students-all'] });
       toast.success("Yangi o'quvchi yaratildi va guruhga qo'shildi");
       onClose();
     },
@@ -107,6 +146,10 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
   });
 
   const goToStep2 = () => {
+    if (!targetGroupId) {
+      setFormError("Iltimos, guruhni tanlang");
+      return;
+    }
     setStep(2);
     setPhone(searchPhone);
     setFormError('');
@@ -115,6 +158,11 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
   const handleCreateStudentSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setFormError('');
+
+    if (!targetGroupId) {
+      setFormError("Iltimos, guruhni tanlang");
+      return;
+    }
 
     if (!firstName.trim()) {
       setFormError("Ismni kiriting");
@@ -159,7 +207,7 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
               type="button"
               onClick={() => setStep(1)}
               disabled={addNewMutation.isPending}
-              className="px-3.5 py-2 text-xs font-semibold text-stone-700 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors inline-flex items-center gap-1.5"
+              className="px-3.5 py-2 text-xs font-semibold text-stone-700 bg-stone-100 hover:bg-stone-200 rounded-xl transition-colors inline-flex items-center gap-1.5 cursor-pointer"
             >
               <ArrowLeft className="w-3.5 h-3.5" />
               <span>Orqaga</span>
@@ -167,8 +215,8 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
             <button
               type="submit"
               form="new-student-form"
-              disabled={addNewMutation.isPending}
-              className="px-4 py-2 text-xs font-semibold text-white bg-[#0F766E] hover:bg-[#0D9488] rounded-xl transition-colors flex items-center gap-1.5 shadow-xs"
+              disabled={addNewMutation.isPending || !targetGroupId}
+              className="px-4 py-2 text-xs font-semibold text-white bg-[#0F766E] hover:bg-[#0D9488] rounded-xl transition-colors flex items-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer"
             >
               {addNewMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
               <span>Saqlash va qo'shish</span>
@@ -177,185 +225,217 @@ export const AddStudentModal: React.FC<AddStudentModalProps> = ({
         ) : null
       }
     >
-      {step === 1 ? (
-        /* STEP 1: SEARCH */
-        <div className="space-y-4 text-xs">
-          {formError && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs">
-              {formError}
-            </div>
-          )}
-
-          <form onSubmit={handleSearch} className="space-y-3">
+      <div className="space-y-4">
+        {/* Group Selector Dropdown when groupId is not passed via props */}
+        {!propsGroupId && (
+          <div className="text-xs space-y-1 pb-3 border-b border-stone-100">
             <label className="block font-semibold text-stone-700">
-              Telefon raqami bo'yicha qidirish
+              Guruhni tanlang <span className="text-red-500">*</span>
             </label>
-            <div className="flex gap-2">
+            {groups.length === 0 ? (
+              <div className="p-3 bg-amber-50 border border-amber-200 text-amber-800 rounded-xl text-xs font-medium">
+                O'quvchi qo'shish uchun kamida 1 ta guruh bo'lishi kerak. Avval "Guruhlar" bo'limida guruh yarating.
+              </div>
+            ) : (
+              <select
+                value={selectedGroupId}
+                onChange={(e) => {
+                  setSelectedGroupId(e.target.value);
+                  setFormError('');
+                }}
+                className="w-full px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] font-semibold text-stone-900 text-xs"
+              >
+                <option value="">Guruhni tanlang...</option>
+                {groups.map((g: any) => (
+                  <option key={g.id} value={g.id}>
+                    {g.name} ({g.time})
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+        )}
+
+        {step === 1 ? (
+          /* STEP 1: SEARCH */
+          <div className="space-y-4 text-xs">
+            {formError && (
+              <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs">
+                {formError}
+              </div>
+            )}
+
+            <form onSubmit={handleSearch} className="space-y-3">
+              <label className="block font-semibold text-stone-700">
+                Telefon raqami bo'yicha qidirish
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="+998 90 123 45 67"
+                  value={searchPhone}
+                  onChange={(e) => setSearchPhone(applyPhoneMask(e.target.value))}
+                  className="flex-1 px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] font-semibold text-stone-900 tabular-nums text-sm"
+                />
+                <button
+                  type="submit"
+                  disabled={isSearching || !targetGroupId}
+                  className="px-4 py-2 bg-[#0F766E] text-white font-semibold rounded-xl hover:bg-[#0D9488] transition-colors flex items-center gap-1.5 shrink-0 disabled:opacity-50 cursor-pointer"
+                >
+                  {isSearching ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Search className="w-4 h-4" />
+                  )}
+                  <span>Qidirish</span>
+                </button>
+              </div>
+            </form>
+
+            {/* Search Results */}
+            {searchResults !== null && (
+              <div className="pt-3 border-t border-stone-100 space-y-3">
+                {searchResults.length > 0 ? (
+                  <div>
+                    <p className="text-xs font-semibold text-stone-700 mb-2">
+                      Mavjud o'quvchi topildi ({searchResults.length} ta):
+                    </p>
+                    <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                      {searchResults.map((st) => (
+                        <div
+                          key={st.id}
+                          className="p-3 bg-stone-50 border border-stone-200 rounded-xl flex items-center justify-between gap-3 hover:border-[#0F766E]/30 transition-all"
+                        >
+                          <div>
+                            <p className="font-bold text-stone-900 text-xs">
+                              {st.firstName} {st.lastName}
+                            </p>
+                            <p className="text-[11px] text-stone-500 tabular-nums">
+                              {formatPhoneDisplay(st.phone)}
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => addExistingMutation.mutate(st.id)}
+                            disabled={addExistingMutation.isPending || !targetGroupId}
+                            className="px-3 py-1.5 bg-[#0F766E] text-white text-xs font-semibold rounded-lg hover:bg-[#0D9488] transition-colors flex items-center gap-1 shrink-0 disabled:opacity-50 cursor-pointer"
+                          >
+                            {addExistingMutation.isPending ? (
+                              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                            ) : (
+                              <UserCheck className="w-3.5 h-3.5" />
+                            )}
+                            <span>Qo'shish</span>
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 bg-stone-50 border border-stone-200 rounded-xl text-center">
+                    <p className="text-xs text-stone-600 font-medium mb-3">
+                      Ushbu raqam bilan o'quvchi topilmadi.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={goToStep2}
+                      className="w-full py-2 px-3 bg-[#0F766E] text-white text-xs font-semibold rounded-xl hover:bg-[#0D9488] transition-colors flex items-center justify-center gap-2 cursor-pointer"
+                    >
+                      <UserPlus className="w-4 h-4" />
+                      <span>Yangi o'quvchi sifatida qo'shish</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* STEP 2: NEW STUDENT FORM */
+          <form
+            id="new-student-form"
+            onSubmit={handleCreateStudentSubmit}
+            className="space-y-3.5 text-xs"
+          >
+            {formError && (
+              <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs">
+                {formError}
+              </div>
+            )}
+
+            {/* Ismi */}
+            <div>
+              <label className="block font-semibold text-stone-700 mb-1">
+                Ismi <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
-                placeholder="+998 90 123 45 67"
-                value={searchPhone}
-                onChange={(e) => setSearchPhone(applyPhoneMask(e.target.value))}
-                className="flex-1 px-3 py-2 bg-stone-50 border border-stone-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] font-semibold text-stone-900 tabular-nums text-sm"
+                placeholder="Masalan: Ali"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className="w-full px-3 py-2 bg-stone-50 border border-[#E7E5E4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] font-medium text-stone-900"
+                required
               />
-              <button
-                type="submit"
-                disabled={isSearching}
-                className="px-4 py-2 bg-[#0F766E] text-white font-semibold rounded-xl hover:bg-[#0D9488] transition-colors flex items-center gap-1.5 shrink-0"
-              >
-                {isSearching ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Search className="w-4 h-4" />
-                )}
-                <span>Qidirish</span>
-              </button>
+            </div>
+
+            {/* Familiyasi */}
+            <div>
+              <label className="block font-semibold text-stone-700 mb-1">
+                Familiyasi <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                placeholder="Masalan: Valiyev"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className="w-full px-3 py-2 bg-stone-50 border border-[#E7E5E4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] font-medium text-stone-900"
+                required
+              />
+            </div>
+
+            {/* Telefon raqami */}
+            <div>
+              <label className="block font-semibold text-stone-700 mb-1">
+                Telefon raqami <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={phone}
+                onChange={(e) => setPhone(applyPhoneMask(e.target.value))}
+                className="w-full px-3 py-2 bg-stone-50 border border-[#E7E5E4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] font-semibold text-stone-900 tabular-nums"
+                required
+              />
+            </div>
+
+            {/* Ota-ona ismi (IXTIYORIY) */}
+            <div>
+              <label className="block font-semibold text-stone-700 mb-1">
+                Ota-ona ismi <span className="text-stone-400 font-normal">(ixtiyoriy)</span>
+              </label>
+              <input
+                type="text"
+                placeholder="Masalan: Hikmat Valiyev"
+                value={parentName}
+                onChange={(e) => setParentName(e.target.value)}
+                className="w-full px-3 py-2 bg-stone-50 border border-[#E7E5E4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] font-medium text-stone-900"
+              />
+            </div>
+
+            {/* Ota-ona telefon raqami (MAJBURIY) */}
+            <div>
+              <label className="block font-semibold text-stone-700 mb-1">
+                Ota-ona telefon raqami <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="text"
+                value={parentPhone}
+                onChange={(e) => setParentPhone(applyPhoneMask(e.target.value))}
+                className="w-full px-3 py-2 bg-stone-50 border border-[#E7E5E4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] font-semibold text-stone-900 tabular-nums"
+                required
+              />
             </div>
           </form>
-
-          {/* Search Results */}
-          {searchResults !== null && (
-            <div className="pt-3 border-t border-stone-100 space-y-3">
-              {searchResults.length > 0 ? (
-                <div>
-                  <p className="text-xs font-semibold text-stone-700 mb-2">
-                    Mavjud o'quvchi topildi ({searchResults.length} ta):
-                  </p>
-                  <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
-                    {searchResults.map((st) => (
-                      <div
-                        key={st.id}
-                        className="p-3 bg-stone-50 border border-stone-200 rounded-xl flex items-center justify-between gap-3 hover:border-[#0F766E]/30 transition-all"
-                      >
-                        <div>
-                          <p className="font-bold text-stone-900 text-xs">
-                            {st.firstName} {st.lastName}
-                          </p>
-                          <p className="text-[11px] text-stone-500 tabular-nums">
-                            {formatPhoneDisplay(st.phone)}
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => addExistingMutation.mutate(st.id)}
-                          disabled={addExistingMutation.isPending}
-                          className="px-3 py-1.5 bg-[#0F766E] text-white text-xs font-semibold rounded-lg hover:bg-[#0D9488] transition-colors flex items-center gap-1 shrink-0"
-                        >
-                          {addExistingMutation.isPending ? (
-                            <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                          ) : (
-                            <UserCheck className="w-3.5 h-3.5" />
-                          )}
-                          <span>Qo'shish</span>
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="p-4 bg-stone-50 border border-stone-200 rounded-xl text-center">
-                  <p className="text-xs text-stone-600 font-medium mb-3">
-                    Ushbu raqam bilan o'quvchi topilmadi.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={goToStep2}
-                    className="w-full py-2 px-3 bg-[#0F766E] text-white text-xs font-semibold rounded-xl hover:bg-[#0D9488] transition-colors flex items-center justify-center gap-2"
-                  >
-                    <UserPlus className="w-4 h-4" />
-                    <span>Yangi o'quvchi sifatida qo'shish</span>
-                  </button>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-      ) : (
-        /* STEP 2: NEW STUDENT FORM */
-        <form
-          id="new-student-form"
-          onSubmit={handleCreateStudentSubmit}
-          className="space-y-3.5 text-xs"
-        >
-          {formError && (
-            <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded-xl text-xs">
-              {formError}
-            </div>
-          )}
-
-          {/* Ismi */}
-          <div>
-            <label className="block font-semibold text-stone-700 mb-1">
-              Ismi <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              placeholder="Masalan: Ali"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              className="w-full px-3 py-2 bg-stone-50 border border-[#E7E5E4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] font-medium text-stone-900"
-              required
-            />
-          </div>
-
-          {/* Familiyasi */}
-          <div>
-            <label className="block font-semibold text-stone-700 mb-1">
-              Familiyasi <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              placeholder="Masalan: Valiyev"
-              value={lastName}
-              onChange={(e) => setLastName(e.target.value)}
-              className="w-full px-3 py-2 bg-stone-50 border border-[#E7E5E4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] font-medium text-stone-900"
-              required
-            />
-          </div>
-
-          {/* Telefon raqami */}
-          <div>
-            <label className="block font-semibold text-stone-700 mb-1">
-              Telefon raqami <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={phone}
-              onChange={(e) => setPhone(applyPhoneMask(e.target.value))}
-              className="w-full px-3 py-2 bg-stone-50 border border-[#E7E5E4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] font-semibold text-stone-900 tabular-nums"
-              required
-            />
-          </div>
-
-          {/* Ota-ona ismi (IXTIYORIY) */}
-          <div>
-            <label className="block font-semibold text-stone-700 mb-1">
-              Ota-ona ismi <span className="text-stone-400 font-normal">(ixtiyoriy)</span>
-            </label>
-            <input
-              type="text"
-              placeholder="Masalan: Hikmat Valiyev"
-              value={parentName}
-              onChange={(e) => setParentName(e.target.value)}
-              className="w-full px-3 py-2 bg-stone-50 border border-[#E7E5E4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] font-medium text-stone-900"
-            />
-          </div>
-
-          {/* Ota-ona telefon raqami (MAJBURIY) */}
-          <div>
-            <label className="block font-semibold text-stone-700 mb-1">
-              Ota-ona telefon raqami <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={parentPhone}
-              onChange={(e) => setParentPhone(applyPhoneMask(e.target.value))}
-              className="w-full px-3 py-2 bg-stone-50 border border-[#E7E5E4] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] font-semibold text-stone-900 tabular-nums"
-              required
-            />
-          </div>
-        </form>
-      )}
+        )}
+      </div>
     </Modal>
   );
 };

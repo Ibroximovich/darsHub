@@ -9,13 +9,16 @@ import {
   ChevronRight,
   Loader2,
   AlertCircle,
+  UserPlus,
 } from 'lucide-react';
 import { studentsApi } from '../../api/students';
 import { formatPhoneDisplay } from '../../utils/phone.utils';
+import { AddStudentModal } from '../../components/students/AddStudentModal';
 
 export const StudentsPage: React.FC = () => {
   const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState('');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   const {
     data: students = [],
@@ -48,16 +51,27 @@ export const StudentsPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Search Input */}
-        <div className="relative w-full sm:w-72">
-          <Search className="w-4 h-4 text-stone-400 absolute left-3 top-3" />
-          <input
-            type="text"
-            placeholder="Ism yoki telefon bo'yicha qidirish..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 bg-white border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] text-xs font-medium text-stone-900 shadow-2xs"
-          />
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+          {/* Search Input */}
+          <div className="relative w-full sm:w-72">
+            <Search className="w-4 h-4 text-stone-400 absolute left-3 top-3" />
+            <input
+              type="text"
+              placeholder="Ism yoki telefon bo'yicha qidirish..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-9 pr-3 py-2 bg-white border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#0F766E]/20 focus:border-[#0F766E] text-xs font-medium text-stone-900 shadow-2xs"
+            />
+          </div>
+
+          {/* Add Student Button (Top Right) */}
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-[#0F766E] hover:bg-[#0D9488] text-white font-semibold text-xs rounded-xl shadow-xs transition-all active:scale-[0.98] cursor-pointer shrink-0"
+          >
+            <UserPlus className="w-4 h-4" />
+            <span>O'quvchi qo'shish</span>
+          </button>
         </div>
       </div>
 
@@ -88,11 +102,20 @@ export const StudentsPage: React.FC = () => {
           <h3 className="text-lg font-bold text-stone-900 mb-1">
             {searchTerm ? "O'quvchi topilmadi" : "Hali o'quvchi qo'shilmagan"}
           </h3>
-          <p className="text-xs text-stone-500 max-w-sm leading-relaxed">
+          <p className="text-xs text-stone-500 max-w-sm leading-relaxed mb-6">
             {searchTerm
               ? "Qidiruv bo'yicha hech qanday o'quvchi mos kelmadi."
-              : "O'quvchilarni guruhlar sahifasi orqali guruhlarga biriktirishingiz mumkin."}
+              : "O'quvchilarni guruhlar sahifasi orqali yoki to'g'ridan-to'g'ri shu yerdan guruhlarga biriktirishingiz mumkin."}
           </p>
+          {!searchTerm && (
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-[#0F766E] hover:bg-[#0D9488] text-white font-semibold text-xs rounded-xl shadow-xs transition-all active:scale-[0.98] cursor-pointer"
+            >
+              <UserPlus className="w-4 h-4" />
+              <span>O'quvchi qo'shish</span>
+            </button>
+          )}
         </div>
       ) : (
         /* Students List */
@@ -168,6 +191,12 @@ export const StudentsPage: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Add Student Modal */}
+      <AddStudentModal
+        isOpen={isAddModalOpen}
+        onClose={() => setIsAddModalOpen(false)}
+      />
     </div>
   );
 };
